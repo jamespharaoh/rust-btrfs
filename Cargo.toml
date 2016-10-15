@@ -18,8 +18,8 @@ include = [
 
 [dependencies]
 
-ioctl = "*"
-libc = "*"
+ioctl = "0.3"
+libc = "0.2"
 uuid = "0.3"
 
 # noet ts=4 filetype=toml
