@@ -7,7 +7,7 @@ Mirrord at [github.com](https://github.com/wellbehavedsoftware/rust-btrfs)
 
 Available from [crates.io](https://crates.io/crates/btrfs)
 
-Written by [James Pharaoh](mailto:james@wellbehavedsoftware.com))
+Written by [James Pharaoh](mailto:james@wellbehavedsoftware.com)
 
 Open sourced under the [Apache 2.0 license]
 (http://www.apache.org/licenses/LICENSE-2.0)
