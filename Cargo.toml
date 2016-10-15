@@ -1,0 +1,25 @@
+[package]
+
+name = "btrfs"
+description = "Interface for BTRFS ioctls etc"
+license = "Apache-2.0"
+
+version = "0.1.0"
+
+authors = [
+	"James Pharaoh <james@wellbehavedsoftware.com>",
+]
+
+include = [
+	"src/**/*.rs",
+	"Cargo.toml",
+	"README.md",
+]
+
+[dependencies]
+
+ioctl = "*"
+libc = "*"
+uuid = "0.3"
+
+# noet ts=4 filetype=toml
