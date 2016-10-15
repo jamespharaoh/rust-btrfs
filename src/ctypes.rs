@@ -45,6 +45,9 @@ pub const BLOCK_GROUP_PROFILE_MASK: u64 = (
 	| BLOCK_GROUP_RAID10
 );
 
+pub const FILE_DEDUPE_RANGE_SAME: i32 = 0;
+pub const FILE_DEDUPE_RANGE_DIFFERS: i32 = 1;
+
 #[ repr (C) ]
 #[ derive (Copy, Clone, Debug) ]
 pub struct IoctlSpaceArgs {
@@ -217,6 +220,26 @@ impl IoctlDevInfoArgs {
 
 	}
 
+}
+
+#[ repr (C) ]
+#[ derive (Copy, Clone, Debug) ]
+pub struct IoctlFileDedupeRange {
+	pub src_offset: u64,
+	pub src_length: u64,
+	pub dest_count: u16,
+	pub reserved1: u16,
+	pub reserved2: u16,
+}
+
+#[ repr (C) ]
+#[ derive (Copy, Clone, Debug) ]
+pub struct IoctlFileDedupeRangeInfo {
+	pub dest_fd: i64,
+	pub dest_offset: u64,
+	pub bytes_deduped: u64,
+	pub status: i32,
+	pub reserved: u32,
 }
 
 // ex: noet ts=4 filetype=rust

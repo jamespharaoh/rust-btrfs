@@ -2,7 +2,7 @@ extern crate uuid;
 
 use std::ffi;
 
-use ctypes;
+use ctypes::*;
 
 #[ derive (Debug, Eq, PartialEq) ]
 pub enum GroupType {
@@ -50,27 +50,48 @@ pub struct DeviceInfo {
 	pub path: ffi::OsString,
 }
 
+#[ derive (Debug, Eq, PartialEq) ]
+pub struct DedupeRange {
+	pub src_offset: u64,
+	pub src_length: u64,
+	pub dest_infos: Vec <DedupeRangeDestInfo>,
+}
+
+#[ derive (Debug, Eq, PartialEq) ]
+pub enum DedupeRangeStatus {
+	Same,
+	Differs,
+}
+
+#[ derive (Debug, Eq, PartialEq) ]
+pub struct DedupeRangeDestInfo {
+	pub dest_fd: i64,
+	pub dest_offset: u64,
+	pub bytes_deduped: u64,
+	pub status: DedupeRangeStatus,
+}
+
 impl From <u64> for GroupType {
 
 	fn from (
 		flags: u64,
 	) -> GroupType {
 
-		match flags & ctypes::BLOCK_GROUP_TYPE_AND_RESERVED_MASK {
+		match flags & BLOCK_GROUP_TYPE_AND_RESERVED_MASK {
 
-			ctypes::BLOCK_GROUP_DATA =>
+			BLOCK_GROUP_DATA =>
 				GroupType::Data,
 
-			ctypes::BLOCK_GROUP_SYSTEM =>
+			BLOCK_GROUP_SYSTEM =>
 				GroupType::System,
 
-			ctypes::BLOCK_GROUP_METADATA =>
+			BLOCK_GROUP_METADATA =>
 				GroupType::MetaData,
 
-			ctypes::BLOCK_GROUP_DATA_AND_METADATA =>
+			BLOCK_GROUP_DATA_AND_METADATA =>
 				GroupType::DataAndMetaData,
 
-			ctypes::BLOCK_GROUP_RESERVED =>
+			BLOCK_GROUP_RESERVED =>
 				GroupType::GlobalReserve,
 
 			_ =>
@@ -113,27 +134,27 @@ impl From <u64> for GroupProfile {
 		flags: u64,
 	) -> GroupProfile {
 
-		match flags & ctypes::BLOCK_GROUP_PROFILE_MASK {
+		match flags & BLOCK_GROUP_PROFILE_MASK {
 
 			0 =>
 				GroupProfile::Single,
 
-			ctypes::BLOCK_GROUP_RAID0 =>
+			BLOCK_GROUP_RAID0 =>
 				GroupProfile::Raid0,
 
-			ctypes::BLOCK_GROUP_RAID1 =>
+			BLOCK_GROUP_RAID1 =>
 				GroupProfile::Raid1,
 
-			ctypes::BLOCK_GROUP_RAID5 =>
+			BLOCK_GROUP_RAID5 =>
 				GroupProfile::Raid5,
 
-			ctypes::BLOCK_GROUP_RAID6 =>
+			BLOCK_GROUP_RAID6 =>
 				GroupProfile::Raid6,
 
-			ctypes::BLOCK_GROUP_DUP =>
+			BLOCK_GROUP_DUP =>
 				GroupProfile::Dup,
 
-			ctypes::BLOCK_GROUP_RAID10 =>
+			BLOCK_GROUP_RAID10 =>
 				GroupProfile::Raid10,
 
 			_ =>

@@ -1,5 +1,5 @@
-extern crate libc;
-extern crate uuid;
+use libc;
+use uuid;
 
 use std::io;
 
