@@ -152,23 +152,24 @@ pub fn deduplicate_range (
 
 }
 
-pub fn deduplicate_files <AsPath: AsRef <Path>> (
-	filenames: & [AsPath],
+pub fn deduplicate_files_with_source <
+	AsPath1: AsRef <Path>,
+	AsPath2: AsRef <Path>,
+> (
+	source_filename: AsPath1,
+	dest_filenames: & [AsPath2],
 ) -> Result <(), String> {
 
-	// nothing to do unless there is more than one filename
+	let source_filename =
+		source_filename.as_ref ();
 
-	if filenames.len () <= 1 {
+	// nothing to do unless there is are no dest filenames
+
+	if dest_filenames.is_empty () {
 		return Ok (());
 	}
 
-	// create data structures
-
-	let (source_filename, dest_filenames) =
-		filenames.split_at (1);
-
-	let source_filename =
-		source_filename [0].as_ref ();
+	// open files
 
 	let source_file_metadata =
 		try! (
@@ -236,6 +237,8 @@ pub fn deduplicate_files <AsPath: AsRef <Path>> (
 
 	}
 
+	// create data structures
+
 	let mut dedupe_range =
 		DedupeRange {
 
@@ -271,6 +274,40 @@ pub fn deduplicate_files <AsPath: AsRef <Path>> (
 	// TODO
 
 	Ok (())
+
+}
+
+pub fn deduplicate_files <AsPath: AsRef <Path>> (
+	filenames: & [AsPath],
+) -> Result <(), String> {
+
+	// nothing to do unless there is more than one filename
+
+	if filenames.len () <= 1 {
+		return Ok (());
+	}
+
+	// split out source and dest filenames
+
+	let (source_filename, dest_filenames) =
+		filenames.split_at (1);
+
+	let source_filename =
+		source_filename [0].as_ref ();
+
+	let dest_filenames: Vec <& Path> =
+		dest_filenames.into_iter ().map (
+			|dest_filename|
+
+		dest_filename.as_ref ()
+
+	).collect ();
+
+	// delegate
+
+	deduplicate_files_with_source (
+		source_filename,
+		& dest_filenames)
 
 }
 
