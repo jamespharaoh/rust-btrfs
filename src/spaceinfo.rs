@@ -1,3 +1,9 @@
+//! This module contains an interface to the kernel's space info facility.
+//!
+//! Please note, that this information is not representetive of the actual
+//! storage used, and so is only useful in specific cases. The "file system
+//! info" functionality is, in many cases, more likely to be useful.
+
 use libc;
 
 use std::mem;

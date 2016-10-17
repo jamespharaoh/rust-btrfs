@@ -1,3 +1,11 @@
+//! This module contains an interface to the kernel's file system info
+//! functionality.
+//!
+//! This includes information about the various backing devices and their usage.
+//! This information is essential to detect when a BTRFS filesystem is reaching
+//! capacity, and a high level of usage may indicate that a balance operation
+//! is required.
+
 use libc;
 use uuid;
 

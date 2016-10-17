@@ -1,3 +1,9 @@
+//! This module contains all of the C data structures and constants which are
+//! required for interacting with the kernel.
+//!
+//! These have generally been extracted by hand from include files found in the
+//! btrfs utils packages and the kernel.
+
 use std::ffi;
 use std::fmt;
 use std::os::unix::ffi::OsStringExt;

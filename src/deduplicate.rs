@@ -1,3 +1,17 @@
+//! This module contains an interface to the kernel's deduplication
+//! functionality.
+//!
+//! For a low-level interface which closely matches the low-level interface, use
+//! `deduplicate_range`. For a higher level interface which is designed for the
+//! common use case of deduplicating an entire file or number of files there are
+//! `deduplicate_files` and `deduplicate_files_with_source`.
+//!
+//! Please note, that it is required to open all of the files which are to be
+//! deduplicated at once. It is not hard to exceed the maximum number of open
+//! files allowed by the kernel. As a workaround, you can either raise this
+//! limit, or deduplicate a set of files in batches, using the same source file
+//! each time, which should eventually have exactly the same result.
+
 use libc;
 
 use std::error::Error;
@@ -12,6 +26,9 @@ use ctypes::*;
 use filedescriptor::*;
 use ioctlwrapper;
 use types::*;
+
+/// This function maps directly onto the kernel's deduplicate range
+/// functionality.
 
 pub fn deduplicate_range (
 	file_descriptor: libc::c_int,
@@ -138,7 +155,7 @@ pub fn deduplicate_range (
 			unrecognised_status =>
 				return Err (
 					format! (
-						"Unrecognised status: {}",
+						"Unrecognised dedupe status: {}",
 						unrecognised_status)
 				),
 
@@ -151,6 +168,13 @@ pub fn deduplicate_range (
 	Ok (())
 
 }
+
+/// This function provides a high-level method to deduplicate a large number of
+/// entire files in one go. It takes a single source filename and a list of
+/// destination file names.
+///
+/// Conceptually this is identical to the function `deduplciate_files`, except
+/// for the function signature.
 
 pub fn deduplicate_files_with_source <
 	AsPath1: AsRef <Path>,
@@ -276,6 +300,13 @@ pub fn deduplicate_files_with_source <
 	Ok (())
 
 }
+
+/// This function provides a high-level method to deduplicate a large number of
+/// entire files in one go. It takes a single list of filenames which will be
+/// deduplicated.
+///
+/// Conceptually this is identical to the function
+/// `deduplciate_files_with_source`, except for the function signature.
 
 pub fn deduplicate_files <AsPath: AsRef <Path>> (
 	filenames: & [AsPath],

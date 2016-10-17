@@ -1,3 +1,9 @@
+//! This module contains the public types used by this library.
+//!
+//! Many of these closely match the C types used internally when interfacing
+//! with the kernal, but they are desiggned to be idomatically Rust and far
+//! simpler to use.
+
 extern crate uuid;
 
 use std::ffi;
