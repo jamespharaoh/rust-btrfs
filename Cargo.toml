@@ -2,9 +2,9 @@
 
 name = "btrfs"
 description = "Interface for BTRFS ioctls etc"
-license = "Apache-2.0"
+license = "MIT"
 
-version = "1.1.0"
+version = "1.2.0"
 
 authors = [
 	"James Pharaoh <james@wellbehavedsoftware.com>",
