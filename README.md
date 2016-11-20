@@ -1,6 +1,8 @@
 # Rust BTRFS library
 
-Hosted at [gitlab.wellbehavedsoftware.com]
+Home page at [rust-btrfs.com](http://rust-btrfs.com)
+
+Git repository at [gitlab.wellbehavedsoftware.com]
 (https://gitlab.wellbehavedsoftware.com/well-behaved-software/rust-btrfs)
 
 Mirrord at [github.com](https://github.com/wellbehavedsoftware/rust-btrfs)
@@ -9,8 +11,10 @@ Available from [crates.io](https://crates.io/crates/btrfs)
 
 Written by [James Pharaoh](mailto:james@wellbehavedsoftware.com)
 
-Open sourced under the [Apache 2.0 license]
-(http://www.apache.org/licenses/LICENSE-2.0)
+Documentation at [docs.rs](https://docs.rs/btrfs/)
+
+Open sourced under the permissive [MIT licence]
+(https://opensource.org/licenses/MIT)
 
 ## Description
 
@@ -20,6 +24,15 @@ tools include lowlevel interfaces which this project is based on.
 
 This is mostly here to implement the things I need for now, but I'm open to any
 contributions to make this the standard BTRFS userspace library for rust!
+
+## Supported features
+
+This library consists of a number of wrappers around the BTRFS ioctls.
+
+- Deduplication (not BTRFS specific)
+- Fiemap (file extent map, not BTRFS specific)
+- File system info
+- Space and device info
 
 ## Other links
 
