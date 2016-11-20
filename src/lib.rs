@@ -12,6 +12,7 @@ extern crate libc;
 extern crate uuid;
 
 pub mod deduplicate;
+pub mod fiemap;
 pub mod filesysteminfo;
 pub mod spaceinfo;
 pub mod types;
@@ -21,6 +22,7 @@ mod filedescriptor;
 mod ioctlwrapper;
 
 pub use deduplicate::*;
+pub use fiemap::*;
 pub use filesysteminfo::*;
 pub use spaceinfo::*;
 pub use types::*;
