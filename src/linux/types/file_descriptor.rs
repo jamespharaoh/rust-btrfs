@@ -1,7 +1,4 @@
-use libc;
-
-use std::ffi::CString;
-use std::path::Path;
+use linux::imports::*;
 
 // ---------- file descriptor with destructor
 

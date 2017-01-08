@@ -6,14 +6,7 @@
 //! capacity, and a high level of usage may indicate that a balance operation
 //! is required.
 
-use libc;
-use uuid;
-
-use std::io;
-
-use ctypes;
-use ioctlwrapper;
-use types::*;
+use linux::imports::*;
 
 // ---------- get filesystem info
 
@@ -24,14 +17,14 @@ pub fn get_filesystem_info (
 	// get filesystem info
 
 	let mut c_fs_info_args =
-		ctypes::IoctlFsInfoArgs::new ();
+		IoctlFsInfoArgs::new ();
 
 	let get_fs_info_result =
 		unsafe {
 
-		ioctlwrapper::fs_info (
+		ioctl_fs_info (
 			file_descriptor,
-			& mut c_fs_info_args as * mut ctypes::IoctlFsInfoArgs)
+			& mut c_fs_info_args as * mut IoctlFsInfoArgs)
 
 	};
 
@@ -55,7 +48,7 @@ pub fn get_filesystem_info (
 				c_fs_info_args.num_devices,
 
 			filesystem_id:
-				uuid::Uuid::from_bytes (
+				Uuid::from_bytes (
 					& c_fs_info_args.filesystem_id,
 				).unwrap (),
 
@@ -70,7 +63,7 @@ pub fn get_device_info (
 ) -> Result <Option <DeviceInfo>, String> {
 
 	let mut c_dev_info_args =
-		ctypes::IoctlDevInfoArgs::new ();
+		IoctlDevInfoArgs::new ();
 
 	c_dev_info_args.devid =
 		device_id;
@@ -78,9 +71,9 @@ pub fn get_device_info (
 	let get_dev_info_result =
 		unsafe {
 
-		ioctlwrapper::dev_info (
+		ioctl_dev_info (
 			file_descriptor,
-			& mut c_dev_info_args as * mut ctypes::IoctlDevInfoArgs)
+			& mut c_dev_info_args as * mut IoctlDevInfoArgs)
 
 	};
 
@@ -113,7 +106,7 @@ pub fn get_device_info (
 			device_id:
 				c_dev_info_args.devid,
 
-			uuid: uuid::Uuid::from_bytes (
+			uuid: Uuid::from_bytes (
 				& c_dev_info_args.uuid,
 			).unwrap (),
 

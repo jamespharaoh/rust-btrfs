@@ -4,16 +4,7 @@
 //! storage used, and so is only useful in specific cases. The "file system
 //! info" functionality is, in many cases, more likely to be useful.
 
-use libc;
-
-use std::mem;
-use std::iter;
-use std::iter::FromIterator;
-use std::slice;
-
-use ctypes::*;
-use ioctlwrapper;
-use types::*;
+use linux::imports::*;
 
 // ---------- get space info
 
@@ -135,7 +126,7 @@ fn get_c_space_info (
 
 	let get_space_args_real_result =
 		unsafe {
-			ioctlwrapper::space_info (
+			ioctl_space_info (
 				file_descriptor,
 				c_space_args as * mut IoctlSpaceArgs)
 		};

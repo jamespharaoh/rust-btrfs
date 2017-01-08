@@ -5,26 +5,24 @@
 //! It's home page is at [gitlab.wellbehavedsoftware.com]
 //! (https://gitlab.wellbehavedsoftware.com/well-behaved-software/rust-btrfs).
 
+#![ allow (unused_parens) ]
+
 #[ macro_use ]
 extern crate ioctl;
 
+#[ macro_use ]
+extern crate lazy_static;
+
+extern crate crc;
 extern crate libc;
+extern crate flate2;
+extern crate minilzo;
 extern crate uuid;
 
-pub mod deduplicate;
-pub mod fiemap;
-pub mod filesysteminfo;
-pub mod spaceinfo;
-pub mod types;
+pub mod compress;
+pub mod diskformat;
+pub mod linux;
 
-mod ctypes;
-mod filedescriptor;
-mod ioctlwrapper;
-
-pub use deduplicate::*;
-pub use fiemap::*;
-pub use filesysteminfo::*;
-pub use spaceinfo::*;
-pub use types::*;
+pub use linux::*;
 
 // ex: noet ts=4 filetype=rust

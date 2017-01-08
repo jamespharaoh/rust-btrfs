@@ -1,12 +1,4 @@
-use std::iter;
-use std::iter::FromIterator;
-use std::mem;
-use std::path::Path;
-use std::slice;
-
-use libc;
-
-use filedescriptor::*;
+use linux::imports::*;
 
 // --------- high level wrapper
 
@@ -205,37 +197,8 @@ fn get_c_file_extent_map (
 
 }
 
-const FIEMAP_FLAG_SYNC: u32 = 0x00000001;
+//const FIEMAP_FLAG_SYNC: u32 = 0x00000001;
 
 const FIEMAP_EXTENT_LAST: u32 = 0x00000001;
-
-#[ repr (C) ]
-#[ derive (Copy, Clone, Debug) ]
-pub struct IoctlFiemap {
-	start: u64,
-	length: u64,
-	flags: u32,
-	mapped_extents: u32,
-	extent_count: u32,
-	reserved: u32,
-}
-
-#[ repr (C) ]
-#[ derive (Copy, Clone, Debug) ]
-pub struct IoctlFiemapExtent {
-	logical: u64,
-	physical: u64,
-	length: u64,
-	reserved0: u64,
-	reserved1: u64,
-	flags: u32,
-	reserved2: u32,
-	reserved3: u32,
-	reserved4: u32,
-}
-
-ioctl! (
-	readwrite ioctl_fiemap with 'f' as u64, 11;
-	IoctlFiemap);
 
 // ex: noet ts=4 filetype=rust

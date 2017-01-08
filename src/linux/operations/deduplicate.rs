@@ -12,20 +12,7 @@
 //! limit, or deduplicate a set of files in batches, using the same source file
 //! each time, which should eventually have exactly the same result.
 
-use libc;
-
-use std::error::Error;
-use std::fs;
-use std::iter;
-use std::iter::FromIterator;
-use std::mem;
-use std::path::Path;
-use std::slice;
-
-use ctypes::*;
-use filedescriptor::*;
-use ioctlwrapper;
-use types::*;
+use linux::imports::*;
 
 /// This function maps directly onto the kernel's deduplicate range
 /// functionality.
@@ -96,7 +83,7 @@ pub fn deduplicate_range (
 		c_dedupe_range_infos [index] =
 			IoctlFileDedupeRangeInfo {
 
-			dest_fd: 
+			dest_fd:
 				dest_info.dest_fd,
 
 			dest_offset:
@@ -114,7 +101,7 @@ pub fn deduplicate_range (
 
 	let file_dedupe_range_result = unsafe {
 
-		ioctlwrapper::file_dedupe_range (
+		ioctl_file_dedupe_range (
 			file_descriptor,
 			c_dedupe_range)
 
