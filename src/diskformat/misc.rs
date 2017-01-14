@@ -1,4 +1,71 @@
+use std::collections::HashMap;
+use std::slice;
+
 use crc::crc32;
+
+#[ derive (Clone) ]
+pub struct BtrfsDevice {
+	pointer: * const u8,
+	len: usize,
+}
+
+impl BtrfsDevice {
+
+	pub fn new (
+		pointer: * const u8,
+		len: usize,
+	) -> BtrfsDevice {
+
+		BtrfsDevice {
+			pointer: pointer,
+			len: len,
+		}
+
+	}
+
+	pub fn slice_at (
+		& self,
+		offset: usize,
+		len: usize,
+	) -> & [u8] {
+
+		if offset >= self.len {
+
+			panic! (
+				"Device slice start out of range: 0x{:x}",
+				offset);
+
+		}
+
+		if offset + len >= self.len {
+
+			panic! (
+				"Device slice end out of range: 0x{:x}",
+				offset + len);
+
+		}
+
+		unsafe {
+			slice::from_raw_parts (
+				self.pointer.offset (
+					offset as isize),
+				len,
+			)
+		}
+
+	}
+
+	pub fn pointer (& self) -> * const u8 {
+		self.pointer
+	}
+
+	pub fn len (& self) -> usize {
+		self.len
+	}
+
+}
+
+pub type BtrfsDeviceMap = HashMap <u64, BtrfsDevice>;
 
 pub type BtrfsUuid = [u8; BTRFS_UUID_BYTES];
 

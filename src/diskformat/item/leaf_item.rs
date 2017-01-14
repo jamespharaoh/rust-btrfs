@@ -3,52 +3,31 @@ use std::mem;
 use diskformat::*;
 
 #[ derive (Clone, Debug) ]
-pub enum BtrfsItem <'a> {
-	InodeItem (BtrfsInodeItem <'a>),
-	InternalItem (BtrfsInternalItem <'a>),
-	DirItem (BtrfsDirItem <'a>),
+pub enum BtrfsLeafItem <'a> {
+	ChunkItem (BtrfsChunkItem <'a>),
 	DirIndex (BtrfsDirIndex <'a>),
+	DirItem (BtrfsDirItem <'a>),
 	ExtentData (BtrfsExtentData <'a>),
 	ExtentItem (BtrfsExtentItem <'a>),
-	Unknown (BtrfsUnknownItem <'a>),
+	InodeItem (BtrfsInodeItem <'a>),
 	Invalid (BtrfsInvalidItem <'a>),
-}
-
-#[ derive (Clone, Debug) ]
-pub struct BtrfsUnknownItem <'a> {
-	header: & 'a BtrfsItemHeader,
-	data_bytes: & 'a [u8],
-}
-
-#[ derive (Clone, Debug) ]
-pub struct BtrfsInvalidItem <'a> {
-	header: & 'a BtrfsItemHeader,
-	data_bytes: & 'a [u8],
-	error: String,
+	Unknown (BtrfsUnknownItem <'a>),
 }
 
 #[ repr (C, packed) ]
 #[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsInternalItem <'a> {
-	key: & 'a BtrfsKey,
-	block_number: u64,
-	generation: u64,
-}
-
-#[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsItemHeader {
+pub struct BtrfsLeafItemHeader {
 	key: BtrfsKey,
 	data_offset: u32,
 	data_size: u32,
 }
 
-impl <'a> BtrfsItem <'a> {
+impl <'a> BtrfsLeafItem <'a> {
 
 	pub fn from_bytes (
-		header: & 'a BtrfsItemHeader,
+		header: & 'a BtrfsLeafItemHeader,
 		data_bytes: & 'a [u8],
-	) -> BtrfsItem <'a> {
+	) -> BtrfsLeafItem <'a> {
 
 		match header.key.item_type () {
 
@@ -59,7 +38,7 @@ impl <'a> BtrfsItem <'a> {
 				).map (
 					|inode_item|
 
-					BtrfsItem::InodeItem (
+					BtrfsLeafItem::InodeItem (
 						inode_item)
 
 				),
@@ -71,7 +50,7 @@ impl <'a> BtrfsItem <'a> {
 				).map (
 					|dir_item|
 
-					BtrfsItem::DirItem (
+					BtrfsLeafItem::DirItem (
 						dir_item)
 
 				),
@@ -83,7 +62,7 @@ impl <'a> BtrfsItem <'a> {
 				).map (
 					|dir_index|
 
-					BtrfsItem::DirIndex (
+					BtrfsLeafItem::DirIndex (
 						dir_index)
 
 				),
@@ -95,7 +74,7 @@ impl <'a> BtrfsItem <'a> {
 				).map (
 					|extent_data|
 
-					BtrfsItem::ExtentData (
+					BtrfsLeafItem::ExtentData (
 						extent_data)
 
 				),
@@ -107,52 +86,100 @@ impl <'a> BtrfsItem <'a> {
 				).map (
 					|extent_item|
 
-					BtrfsItem::ExtentItem (
+					BtrfsLeafItem::ExtentItem (
 						extent_item)
+
+				),
+
+			BTRFS_CHUNK_ITEM_TYPE =>
+				BtrfsChunkItem::from_bytes (
+					header,
+					data_bytes,
+				).map (
+					|chunk_item|
+
+					BtrfsLeafItem::ChunkItem (
+						chunk_item)
 
 				),
 
 			_ =>
 				Ok (
-					BtrfsItem::Unknown (
-						BtrfsUnknownItem {
-							header: header,
-							data_bytes: data_bytes,
-						}
+					BtrfsLeafItem::Unknown (
+						BtrfsUnknownItem::new (
+							header,
+							data_bytes,
+						)
 					)
 				),
 
 		}.unwrap_or_else (
 			|error|
 
-			BtrfsItem::Invalid (
-				BtrfsInvalidItem {
-					header: header,
-					data_bytes: data_bytes,
-					error: error,
-				}
+			BtrfsLeafItem::Invalid (
+				BtrfsInvalidItem::new (
+					header,
+					data_bytes,
+					error,
+				)
 			)
 
 		)
 
 	}
 
+	pub fn header (& self) -> & BtrfsLeafItemHeader {
+
+		match self {
+
+			& BtrfsLeafItem::ChunkItem (ref chunk_item) =>
+				chunk_item.header (),
+
+			& BtrfsLeafItem::DirIndex (ref dir_index) =>
+				dir_index.header (),
+
+			& BtrfsLeafItem::DirItem (ref dir_item) =>
+				dir_item.header (),
+
+			& BtrfsLeafItem::ExtentData (ref extent_data) =>
+				extent_data.header (),
+
+			& BtrfsLeafItem::ExtentItem (ref extent_item) =>
+				extent_item.header (),
+
+			& BtrfsLeafItem::InodeItem (ref inode_item) =>
+				inode_item.header (),
+
+			& BtrfsLeafItem::Unknown (ref unknown_item) =>
+				unknown_item.header (),
+
+			& BtrfsLeafItem::Invalid (ref invalid_item) =>
+				invalid_item.header (),
+
+		}
+
+	}
+
+	pub fn key (& self) -> BtrfsKey {
+		self.header ().key
+	}
+
 }
 
-impl BtrfsItemHeader {
+impl BtrfsLeafItemHeader {
 
 	pub fn from_bytes (
 		bytes: & [u8],
-	) -> Result <& BtrfsItemHeader, String> {
+	) -> Result <& BtrfsLeafItemHeader, String> {
 
 		// sanity check
 
-		if bytes.len () != mem::size_of::<BtrfsItemHeader> () {
+		if bytes.len () != mem::size_of::<BtrfsLeafItemHeader> () {
 
 			return Err (
 				format! (
 					"Must be exactly 0x{:x} bytes",
-					mem::size_of::<BtrfsItemHeader> ()));
+					mem::size_of::<BtrfsLeafItemHeader> ()));
 
 		}
 
@@ -160,7 +187,7 @@ impl BtrfsItemHeader {
 
 		Ok (
 			unsafe {
-				& * (bytes.as_ptr () as * const BtrfsItemHeader)
+				& * (bytes.as_ptr () as * const BtrfsLeafItemHeader)
 			}
 		)
 
@@ -192,36 +219,11 @@ impl BtrfsItemHeader {
 
 }
 
-/*
-impl From <u8> for BtrfsItemType {
-
-	pub fn from (
-		value: u8,
-	) -> BtrfsItemType {
-
-		match value {
-
-			BTRFS_INODE_ITEM_TYPE: BtrfsItemType::InodeItem,
-			BTRFS_DIR_ITEM_TYPE: BtrfsItemType::DirItem,
-			BTRFS_DIR_INDEX_TYPE: BtrfsItemType::DirIndex,
-			BTRFS_EXTENT_DATA_TYPE: BtrfsItemType::ExtentData,
-			BTRFS_EXTENT_DATA_ITEM: BtrfsItemType::ExtentItem,
-
-			_ => panic! (
-				"Unrecognised BTRFS item type 0x{2:x}",
-				value),
-
-		}
-
-	}
-
-}
-*/
-
 pub const BTRFS_INODE_ITEM_TYPE: u8 = 0x01;
 pub const BTRFS_DIR_ITEM_TYPE: u8 = 0x54;
 pub const BTRFS_DIR_INDEX_TYPE: u8 = 0x60;
 pub const BTRFS_EXTENT_DATA_TYPE: u8 = 0x6c;
 pub const BTRFS_EXTENT_ITEM_TYPE: u8 = 0xa8;
+pub const BTRFS_CHUNK_ITEM_TYPE: u8 = 0xe4;
 
 // ex: noet ts=4 filetype=rust

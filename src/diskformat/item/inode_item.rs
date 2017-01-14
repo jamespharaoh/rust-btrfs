@@ -4,7 +4,7 @@ use diskformat::*;
 
 #[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
 pub struct BtrfsInodeItem <'a> {
-	header: & 'a BtrfsItemHeader,
+	header: & 'a BtrfsLeafItemHeader,
 	data_bytes: & 'a [u8],
 }
 
@@ -33,7 +33,7 @@ pub struct BtrfsInodeItemData {
 impl <'a> BtrfsInodeItem <'a> {
 
 	pub fn from_bytes (
-		header: & 'a BtrfsItemHeader,
+		header: & 'a BtrfsLeafItemHeader,
 		data_bytes: & 'a [u8],
 	) -> Result <BtrfsInodeItem <'a>, String> {
 
@@ -59,7 +59,7 @@ impl <'a> BtrfsInodeItem <'a> {
 
 	}
 
-	pub fn header (& self) -> & BtrfsItemHeader {
+	pub fn header (& self) -> & BtrfsLeafItemHeader {
 		self.header
 	}
 

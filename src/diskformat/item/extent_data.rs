@@ -11,7 +11,7 @@ use diskformat::*;
 
 #[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
 pub struct BtrfsExtentData <'a> {
-	header: & 'a BtrfsItemHeader,
+	header: & 'a BtrfsLeafItemHeader,
 	data_bytes: & 'a [u8],
 }
 
@@ -36,7 +36,7 @@ pub struct BtrfsExtentDataData {
 impl <'a> BtrfsExtentData <'a> {
 
 	pub fn from_bytes (
-		header: & 'a BtrfsItemHeader,
+		header: & 'a BtrfsLeafItemHeader,
 		data_bytes: & 'a [u8],
 	) -> Result <BtrfsExtentData <'a>, String> {
 
@@ -84,7 +84,7 @@ impl <'a> BtrfsExtentData <'a> {
 
 	}
 
-	pub fn header (& self) -> & BtrfsItemHeader {
+	pub fn header (& self) -> & BtrfsLeafItemHeader {
 		self.header
 	}
 

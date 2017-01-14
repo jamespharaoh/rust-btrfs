@@ -2,15 +2,15 @@ use std::mem;
 
 use diskformat::*;
 
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsDirItem <'a> {
-	header: & 'a BtrfsItemHeader,
+#[ derive (Copy, Clone, Debug, Eq, Hash, PartialEq) ]
+pub struct BtrfsDirIndex <'a> {
+	header: & 'a BtrfsLeafItemHeader,
 	data_bytes: & 'a [u8],
 }
 
 #[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsDirItemData {
+#[ derive (Copy, Clone, Debug, Eq, Hash, PartialEq) ]
+pub struct BtrfsDirIndexData {
 	child_key: BtrfsKey,
 	transaction_id: u64,
 	data_size: u16,
@@ -18,27 +18,27 @@ pub struct BtrfsDirItemData {
 	child_type: u8,
 }
 
-impl <'a> BtrfsDirItem <'a> {
+impl <'a> BtrfsDirIndex <'a> {
 
 	pub fn from_bytes (
-		header: & 'a BtrfsItemHeader,
+		header: & 'a BtrfsLeafItemHeader,
 		data_bytes: & 'a [u8],
-	) -> Result <BtrfsDirItem <'a>, String> {
+	) -> Result <BtrfsDirIndex <'a>, String> {
 
 		// sanity check
 
-		if data_bytes.len () < mem::size_of::<BtrfsDirItemData> () {
+		if data_bytes.len () < mem::size_of::<BtrfsDirIndexData> () {
 
 			return Err (
 				format! (
 					"Must be at least 0x{:x} bytes",
-					mem::size_of::<BtrfsDirItemData> ()));
+					mem::size_of::<BtrfsDirIndexData> ()));
 
 		}
 
 		// create dir item
 
-		let dir_item = BtrfsDirItem {
+		let dir_item = BtrfsDirIndex {
 			header: header,
 			data_bytes: data_bytes,
 		};
@@ -46,7 +46,7 @@ impl <'a> BtrfsDirItem <'a> {
 		// sanity check
 
 		if data_bytes.len () != (
-			mem::size_of::<BtrfsDirItemData> ()
+			mem::size_of::<BtrfsDirIndexData> ()
 			+ dir_item.data_size () as usize
 			+ dir_item.name_size () as usize
 		) {
@@ -54,7 +54,7 @@ impl <'a> BtrfsDirItem <'a> {
 			return Err (
 				format! (
 					"Must be at least 0x{:x} bytes",
-					mem::size_of::<BtrfsDirItemData> ()
+					mem::size_of::<BtrfsDirIndexData> ()
 					+ dir_item.data_size () as usize
 					+ dir_item.name_size () as usize));
 
@@ -66,24 +66,24 @@ impl <'a> BtrfsDirItem <'a> {
 
 	}
 
-	pub fn header (& self) -> & BtrfsItemHeader {
+	pub fn header (& self) -> & BtrfsLeafItemHeader {
 		self.header
-	}
-
-	pub fn key (& self) -> BtrfsKey {
-		self.header.key ()
 	}
 
 	pub fn object_id (& self) -> u64 {
 		self.header.object_id ()
 	}
 
-	pub fn data (& self) -> & BtrfsDirItemData {
+	pub fn key (& self) -> BtrfsKey {
+		self.header.key ()
+	}
+
+	pub fn data (& self) -> & BtrfsDirIndexData {
 
 		unsafe {
 			& * (
 				self.data_bytes.as_ptr ()
-				as * const BtrfsDirItemData
+				as * const BtrfsDirIndexData
 			)
 		}
 
@@ -91,10 +91,6 @@ impl <'a> BtrfsDirItem <'a> {
 
 	pub fn child_key (& self) -> BtrfsKey {
 		self.data ().child_key
-	}
-
-	pub fn child_object_id (& self) -> u64 {
-		self.data ().child_key.object_id ()
 	}
 
 	pub fn transaction_id (& self) -> u64 {
@@ -118,9 +114,9 @@ impl <'a> BtrfsDirItem <'a> {
 	) -> & 'a [u8] {
 
 		& self.data_bytes [
-			mem::size_of::<BtrfsDirItemData> ()
+			mem::size_of::<BtrfsDirIndexData> ()
 		..
-			mem::size_of::<BtrfsDirItemData> ()
+			mem::size_of::<BtrfsDirIndexData> ()
 			+ self.name_size () as usize
 		]
 
