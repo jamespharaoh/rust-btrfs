@@ -1,6 +1,4 @@
 use std::borrow::Cow;
-use std::io;
-use std::io::Write;
 use std::mem;
 
 use flate2;
@@ -232,17 +230,10 @@ impl <'a> BtrfsExtentData <'a> {
 					).map (
 						|uncompressed_data|
 
-{
-io::stdout ().write_fmt (
-	format_args! (
-		"LZO SUCCESS {} -> {} bytes\r\n",
-		raw_data.len (),
-		uncompressed_data.len ()));
 						Ok (Some (
 							Cow::Owned (
 								uncompressed_data)
 						))
-}
 
 					).or_else (
 						|error|

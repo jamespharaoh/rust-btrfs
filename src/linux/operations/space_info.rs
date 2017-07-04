@@ -124,20 +124,20 @@ fn get_c_space_info (
 	c_space_args.space_slots =
 		num_spaces;
 
-	let get_space_args_real_result =
-		unsafe {
-			ioctl_space_info (
-				file_descriptor,
-				c_space_args as * mut IoctlSpaceArgs)
-		};
+	unsafe {
 
-	if get_space_args_real_result != 0 {
+		ioctl_space_info (
+			file_descriptor,
+			c_space_args as * mut IoctlSpaceArgs)
 
-		return Err (
-			"Error getting btrfs space information".to_string ()
-		);
+	}.map_err (
+		|error|
 
-	}
+		format! (
+			"Error getting btrfs space information: {}",
+			error)
+
+	) ?;
 
 	// return
 

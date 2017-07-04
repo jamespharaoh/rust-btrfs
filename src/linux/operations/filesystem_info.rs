@@ -7,6 +7,8 @@
 //! is required.
 
 use linux::imports::*;
+use nix::Errno as NixErrno;
+use nix::Error as NixError;
 
 // ---------- get filesystem info
 
@@ -19,22 +21,20 @@ pub fn get_filesystem_info (
 	let mut c_fs_info_args =
 		IoctlFsInfoArgs::new ();
 
-	let get_fs_info_result =
-		unsafe {
+	unsafe {
 
 		ioctl_fs_info (
 			file_descriptor,
 			& mut c_fs_info_args as * mut IoctlFsInfoArgs)
 
-	};
+	}.map_err (
+		|error|
 
-	if get_fs_info_result != 0 {
+		format! (
+			"Error getting btrfs filesystem information: {}",
+			error)
 
-		return Err (
-			"Error getting btrfs filesystem information".to_string ()
-		);
-
-	}
+	) ?;
 
 	// return
 
@@ -68,60 +68,53 @@ pub fn get_device_info (
 	c_dev_info_args.devid =
 		device_id;
 
-	let get_dev_info_result =
-		unsafe {
+	match unsafe {
 
 		ioctl_dev_info (
 			file_descriptor,
 			& mut c_dev_info_args as * mut IoctlDevInfoArgs)
 
+	} {
+
+		Err (NixError::Sys (NixErrno::ENODEV)) =>
+			return Ok (None),
+
+		Err (NixError::Sys (errno)) =>
+			return Err (
+				format! (
+					"Os error {} getting device info",
+					errno)),
+
+		Err (error) =>
+			return Err (
+				format! (
+					"Unknown error getting device info: {}",
+					error)),
+
+		_ => (),
+
 	};
 
-	if get_dev_info_result != 0 {
+	Ok (Some (
+		DeviceInfo {
 
-		match io::Error::last_os_error ().raw_os_error () {
+		device_id:
+			c_dev_info_args.devid,
 
-			Some (libc::ENODEV) =>
-				Ok (None),
+		uuid: Uuid::from_bytes (
+			& c_dev_info_args.uuid,
+		).unwrap (),
 
-			Some (errno) =>
-				Err (
-					format! (
-						"Os error {} getting device info",
-						errno)
-				),
+		bytes_used:
+			c_dev_info_args.bytes_used,
 
-			None =>
-				Err (
-					"Unknown error getting device info".to_string (),
-				),
+		total_bytes:
+			c_dev_info_args.total_bytes,
 
-		}
+		path:
+			c_dev_info_args.path.as_os_string (),
 
-	} else {
-
-		Ok (Some (
-			DeviceInfo {
-
-			device_id:
-				c_dev_info_args.devid,
-
-			uuid: Uuid::from_bytes (
-				& c_dev_info_args.uuid,
-			).unwrap (),
-
-			bytes_used:
-				c_dev_info_args.bytes_used,
-
-			total_bytes:
-				c_dev_info_args.total_bytes,
-
-			path:
-				c_dev_info_args.path.as_os_string (),
-
-		}))
-
-	}
+	}))
 
 }
 

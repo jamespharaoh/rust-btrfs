@@ -1,6 +1,3 @@
-use std::io;
-use std::io::Write;
-
 use libc;
 
 use std::mem;
@@ -106,9 +103,6 @@ pub fn decompress (
 	output_size: usize,
 ) -> Result <Vec <u8>, String> {
 
-	io::stderr ().write_all (
-		b"LZO\r\n");
-
 	initialise ().unwrap_or_else (
 		|error|
 
@@ -116,9 +110,6 @@ pub fn decompress (
 			error)
 
 	);
-
-	io::stderr ().write_all (
-		b"LZO2\r\n");
 
 	let mut output =
 		Vec::new ();
@@ -144,9 +135,6 @@ pub fn decompress (
 	output.resize (
 		output_len as usize,
 		0u8);
-
-	io::stderr ().write_all (
-		b"LZO3\r\n");
 
 	match result {
 

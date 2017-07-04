@@ -1,5 +1,3 @@
-use linux::imports::*;
-
 pub const UUID_SIZE: usize = 16;
 pub const DEVICE_PATH_NAME_MAX: usize = 1024;
 

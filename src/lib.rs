@@ -8,10 +8,10 @@
 #![ allow (unused_parens) ]
 
 #[ macro_use ]
-extern crate ioctl;
+extern crate lazy_static;
 
 #[ macro_use ]
-extern crate lazy_static;
+extern crate nix;
 
 extern crate crc;
 extern crate libc;

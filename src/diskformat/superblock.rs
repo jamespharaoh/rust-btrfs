@@ -40,7 +40,7 @@ pub struct BtrfsSuperblock {
 }
 
 pub struct BtrfsSuperblockSystemChunks <'a> {
-	superblock: & 'a BtrfsSuperblock,
+	_superblock: & 'a BtrfsSuperblock,
 	address: * const u8,
 	end_address: * const u8,
 }
@@ -63,7 +63,7 @@ impl BtrfsSuperblock {
 		};
 
 		BtrfsSuperblockSystemChunks {
-			superblock: self,
+			_superblock: self,
 			address: start_address,
 			end_address: end_address,
 		}

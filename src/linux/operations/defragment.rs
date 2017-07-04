@@ -70,21 +70,21 @@ pub fn defragment_range (
 
 	// call ioctl
 
-	let ioctl_result = unsafe {
+	unsafe {
+
 		ioctl_defrag_range (
 			file_descriptor,
 			& defrag_range_args as * const IoctlDefragRangeArgs,
 		)
-	};
 
-	if ioctl_result != 0 {
+	}.map_err (
+		|error|
 
-		return Err (
-			format! (
-				"Defragment IOCTL returned {}",
-				ioctl_result));
+		format! (
+			"Defragment IOCTL returned {}",
+			error)
 
-	}
+	) ?;
 
 	// return ok
 

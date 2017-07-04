@@ -169,22 +169,20 @@ fn get_c_file_extent_map (
 	c_fiemap_info.extent_count = extent_count;
 	c_fiemap_info.flags = 0; //FIEMAP_FLAG_SYNC;
 
-	let fiemap_result =
-		unsafe {
+	unsafe {
 
 		ioctl_fiemap (
 			file_descriptor,
 			c_fiemap_info as * mut IoctlFiemap)
 
-	};
+	}.map_err (
+		|error|
 
-	if fiemap_result != 0 {
+		format! (
+			"Error getting file extent map: {}",
+			error)
 
-		return Err (
-			"Error getting file extent map".to_string ()
-		);
-
-	}
+	) ?;
 
 	// return
 

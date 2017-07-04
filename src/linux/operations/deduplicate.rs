@@ -99,23 +99,20 @@ pub fn deduplicate_range (
 
 	// perform ioctl
 
-	let file_dedupe_range_result = unsafe {
+	unsafe {
 
 		ioctl_file_dedupe_range (
 			file_descriptor,
 			c_dedupe_range)
 
-	};
+	}.map_err (
+		|error|
 
-	if file_dedupe_range_result != 0 {
+		format! (
+			"Dedupe ioctl returned {}",
+			error)
 
-		return Err (
-			format! (
-				"Dedupe ioctl returned {}",
-				file_dedupe_range_result)
-		);
-
-	}
+	) ?;
 
 	// decode c result
 
