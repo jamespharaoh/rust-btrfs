@@ -4,7 +4,7 @@
 	description = "Interface for BTRFS ioctls etc"
 	license = "MIT"
 
-	version = "1.2.1"
+	version = "1.2.2"
 
 	authors = [
 		"James Pharaoh <james@wellbehavedsoftware.com>",
