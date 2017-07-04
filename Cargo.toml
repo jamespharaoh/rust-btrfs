@@ -22,8 +22,8 @@
 	flate2 = "0.2"
 	lazy_static = "0.2"
 	libc = "0.2"
-	minilzo = "0.1"
-	nix = "*"
-	uuid = "0.3"
+	minilzo = "0.2"
+	nix = "0.8"
+	uuid = "0.5"
 
 # noet ts=4 filetype=toml
