@@ -2,19 +2,15 @@
 
 Home page at [rust-btrfs.com](http://rust-btrfs.com)
 
-Git repository at [gitlab.wellbehavedsoftware.com]
-(https://gitlab.wellbehavedsoftware.com/well-behaved-software/rust-btrfs)
-
-Mirrord at [github.com](https://github.com/wellbehavedsoftware/rust-btrfs)
+Git repository at [github.com](https://github.com/wellbehavedsoftware/rust-btrfs)
 
 Available from [crates.io](https://crates.io/crates/btrfs)
 
-Written by [James Pharaoh](mailto:james@wellbehavedsoftware.com)
+Written by [James Pharaoh](mailto:james@pharaoh.uk)
 
 Documentation at [docs.rs](https://docs.rs/btrfs/)
 
-Open sourced under the permissive [MIT licence]
-(https://opensource.org/licenses/MIT)
+Open sourced under the permissive [MIT licence](https://opensource.org/licenses/MIT)
 
 ## Description
 
@@ -38,8 +34,6 @@ This library consists of a number of wrappers around the BTRFS ioctls.
 
 [BTRFS wiki](https://btrfs.wiki.kernel.org/index.php/Main_Page)
 
-[BTRFS utilities (kdave)]
-(git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git)
+[BTRFS utilities (kdave)](git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git)
 
-[BTRFS utilities (mason)]
-(git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git)
+[BTRFS utilities (mason)](git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git)
