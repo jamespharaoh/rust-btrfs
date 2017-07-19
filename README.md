@@ -32,8 +32,6 @@ This library consists of a number of wrappers around the BTRFS ioctls.
 
 ## Other links
 
-[BTRFS wiki](https://btrfs.wiki.kernel.org/index.php/Main_Page)
-
-[BTRFS utilities (kdave)](git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git)
-
-[BTRFS utilities (mason)](git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git)
+- [BTRFS wiki](https://btrfs.wiki.kernel.org/index.php/Main_Page)
+- BTRFS utilities (kdave) git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+- BTRFS utilities (mason) git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
