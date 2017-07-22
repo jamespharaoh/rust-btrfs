@@ -1,53 +1,66 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
+use std::collections::btree_map::Iter as BTreeMapIter;
 
 use diskformat::*;
 
-pub struct BtrfsRootTree {
+pub struct BtrfsRootTree <'a> {
+	tree_items: BTreeMap <BtrfsKey, BtrfsLeafItem <'a>>,
 }
 
-impl BtrfsRootTree {
+impl <'a> BtrfsRootTree <'a> {
 
 	pub fn new (
-		devices: & BtrfsDeviceMap,
-		superblock: & BtrfsSuperblock,
-		chunk_tree: & BtrfsChunkTree,
-	) -> Result <BtrfsRootTree, String> {
+		devices: & 'a BtrfsDeviceSet,
+		chunk_tree: & 'a BtrfsChunkTree,
+	) -> Result <BtrfsRootTree <'a>, String> {
 
-		let mut tree_items: HashMap <BtrfsKey, BtrfsLeafItem> =
-			HashMap::new ();
+		let (root_tree, errors) =
+			Self::new_tolerant (
+				devices,
+				chunk_tree,
+			);
+
+		if errors.is_empty () {
+			Ok (root_tree)
+		} else {
+			Err (errors.into_iter ().next ().unwrap ())
+		}
+
+	}
+
+	pub fn new_tolerant (
+		devices: & 'a BtrfsDeviceSet,
+		chunk_tree: & 'a BtrfsChunkTree,
+	) -> (BtrfsRootTree <'a>, Vec <String>) {
+
+		let mut tree_items: BTreeMap <BtrfsKey, BtrfsLeafItem> =
+			BTreeMap::new ();
 
 		let mut errors: Vec <String> =
 			Vec::new ();
 
-		BtrfsTree::read_tree_recurse (
+		BtrfsTree::read_tree_recurse_logical_address (
 			devices,
-			superblock,
 			chunk_tree,
-			superblock.root_tree_logical_address (),
+			devices.superblock ().root_tree_logical_address (),
 			& mut tree_items,
 			& mut errors,
 		);
 
-		for error in errors {
-
-			println! (
-				"Error reading root tree: {}",
-				error);
-
-		}
-
-		for tree_item in tree_items.values () {
-
-			println! (
-				"Root tree item: {:?}",
-				tree_item);
-
-		}
-
-		Ok (
+		(
 			BtrfsRootTree {
-			}
+				tree_items: tree_items,
+			},
+			errors,
 		)
+
+	}
+
+	pub fn iter (
+		& self,
+	) -> BTreeMapIter <BtrfsKey, BtrfsLeafItem <'a>> {
+
+		self.tree_items.iter ()
 
 	}
 

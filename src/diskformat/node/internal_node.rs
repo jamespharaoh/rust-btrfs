@@ -1,29 +1,28 @@
+use std::fmt::Debug;
+use std::fmt::Error as FmtError;
+use std::fmt::Formatter;
 use std::mem;
+use std::slice;
 
-use diskformat::*;
+use super::super::*;
 
-#[ derive (Clone) ]
+#[ derive (Clone, Copy, Eq, Hash, PartialEq) ]
 pub struct BtrfsInternalNode <'a> {
-	/*position: usize,*/
+	physical_address: BtrfsPhysicalAddress,
 	bytes: & 'a [u8],
-}
-
-pub struct BtrfsInternalNodeItems <'a> {
-	node: BtrfsInternalNode <'a>,
-	index: u32,
 }
 
 impl <'a> BtrfsInternalNode <'a> {
 
 	pub fn new (
-		/*position: usize,*/
+		physical_address: BtrfsPhysicalAddress,
 		bytes: & 'a [u8],
-	) -> BtrfsInternalNode <'a> {
+	) -> Result <BtrfsInternalNode <'a>, String> {
 
-		BtrfsInternalNode {
-			/*position: position,*/
+		Ok (BtrfsInternalNode {
+			physical_address: physical_address,
 			bytes: bytes,
-		}
+		})
 
 	}
 
@@ -44,14 +43,26 @@ impl <'a> BtrfsInternalNode <'a> {
 	}
 
 	pub fn items (
-		self,
-	) -> BtrfsInternalNodeItems <'a> {
+		& self,
+	) -> & 'a [BtrfsInternalItem] {
 
-		BtrfsInternalNodeItems {
-			node: self,
-			index: 0,
+		let start_address =
+			& self.bytes [mem::size_of::<BtrfsNodeHeader> ()]
+				as * const u8
+				as * const BtrfsInternalItem;
+
+		unsafe {
+
+			slice::from_raw_parts (
+				start_address,
+				self.header ().num_items () as usize)
+
 		}
 
+	}
+
+	pub fn physical_address (& self) -> BtrfsPhysicalAddress {
+		self.physical_address
 	}
 
 	pub fn checksum (& self) -> BtrfsChecksum {
@@ -62,7 +73,7 @@ impl <'a> BtrfsInternalNode <'a> {
 		self.header ().fs_uuid ()
 	}
 
-	pub fn tree_id (& self) -> u64 {
+	pub fn tree_id (& self) -> BtrfsTreeId {
 		self.header ().tree_id ()
 	}
 
@@ -76,38 +87,26 @@ impl <'a> BtrfsInternalNode <'a> {
 
 }
 
-impl <'a> Iterator for BtrfsInternalNodeItems <'a> {
+impl <'a> Debug for BtrfsInternalNode <'a> {
 
-	type Item = & 'a BtrfsInternalItem;
+	fn fmt (
+		& self,
+		formatter: & mut Formatter,
+	) -> Result <(), FmtError> {
 
-	fn next (
-		& mut self,
-	) -> Option <& 'a BtrfsInternalItem> {
+		let mut debug_struct =
+			formatter.debug_struct (
+				"BtrfsInternalNode");
 
-		if self.index < self.node.num_items () {
+		self.header ().debug_struct (
+			& mut debug_struct);
 
-			let item_start =
-				mem::size_of::<BtrfsNodeHeader> ()
-				+ self.index as usize
-					* mem::size_of::<BtrfsInternalItem> ();
+		debug_struct.field (
+			"items",
+			& NakedString::from (
+				"..."));
 
-			let item = unsafe {
-				& * (
-					item_start
-						as * const u8
-						as * const BtrfsInternalItem
-				)
-			};
-
-			self.index += 1;
-
-			Some (item)
-
-		} else {
-
-			None
-
-		}
+		debug_struct.finish ()
 
 	}
 

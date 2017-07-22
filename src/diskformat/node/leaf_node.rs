@@ -1,27 +1,25 @@
+use std::fmt::Debug;
+use std::fmt::Error as FmtError;
+use std::fmt::Formatter;
 use std::mem;
 
 use diskformat::*;
 
-#[ derive (Clone) ]
+#[ derive (Clone, Copy, Eq, Hash, PartialEq) ]
 pub struct BtrfsLeafNode <'a> {
-	/*position: usize,*/
+	physical_address: BtrfsPhysicalAddress,
 	bytes: & 'a [u8],
-}
-
-pub struct BtrfsLeafNodeItems <'a> {
-	node: BtrfsLeafNode <'a>,
-	index: u32,
 }
 
 impl <'a> BtrfsLeafNode <'a> {
 
 	pub fn new (
-		/*position: usize,*/
+		physical_address: BtrfsPhysicalAddress,
 		bytes: & 'a [u8],
 	) -> BtrfsLeafNode <'a> {
 
 		BtrfsLeafNode {
-			/*position: position,*/
+			physical_address: physical_address,
 			bytes: bytes,
 		}
 
@@ -47,11 +45,15 @@ impl <'a> BtrfsLeafNode <'a> {
 		self,
 	) -> BtrfsLeafNodeItems <'a> {
 
-		BtrfsLeafNodeItems {
-			node: self,
-			index: 0,
-		}
+		BtrfsLeafNodeItems::new (
+			& self.bytes [mem::size_of::<BtrfsNodeHeader> () ..],
+			self.num_items (),
+		)
 
+	}
+
+	pub fn physical_address (& self) -> BtrfsPhysicalAddress {
+		self.physical_address
 	}
 
 	pub fn checksum (& self) -> BtrfsChecksum {
@@ -62,7 +64,7 @@ impl <'a> BtrfsLeafNode <'a> {
 		self.header ().fs_uuid ()
 	}
 
-	pub fn tree_id (& self) -> u64 {
+	pub fn tree_id (& self) -> BtrfsTreeId {
 		self.header ().tree_id ()
 	}
 
@@ -76,63 +78,26 @@ impl <'a> BtrfsLeafNode <'a> {
 
 }
 
-impl <'a> Iterator for BtrfsLeafNodeItems <'a> {
+impl <'a> Debug for BtrfsLeafNode <'a> {
 
-	type Item = BtrfsLeafItem <'a>;
+	fn fmt (
+		& self,
+		formatter: & mut Formatter,
+	) -> Result <(), FmtError> {
 
-	fn next (
-		& mut self,
-	) -> Option <BtrfsLeafItem <'a>> {
+		let mut debug_struct =
+			formatter.debug_struct (
+				"BtrfsLeafNode");
 
-		if self.index < self.node.num_items () {
+		self.header ().debug_struct (
+			& mut debug_struct);
 
-			// read header
+		debug_struct.field (
+			"items",
+			& NakedString::from (
+				"..."));
 
-			let header_start =
-				mem::size_of::<BtrfsNodeHeader> ()
-				+ self.index as usize
-					* mem::size_of::<BtrfsLeafItemHeader> ();
-
-			let header_end =
-				mem::size_of::<BtrfsNodeHeader> ()
-				+ self.index as usize
-					* mem::size_of::<BtrfsLeafItemHeader> ()
-				+ mem::size_of::<BtrfsLeafItemHeader> ();
-
-			let item_header_bytes =
-				& self.node.bytes [
-					header_start .. header_end];
-
-			let item_header =
-				BtrfsLeafItemHeader::from_bytes (
-					item_header_bytes,
-				).unwrap ();
-
-			// read data
-
-			let item_data =
-				& self.node.bytes [
-					mem::size_of::<BtrfsNodeHeader> ()
-					+ item_header.data_offset () as usize
-				..
-					mem::size_of::<BtrfsNodeHeader> ()
-					+ item_header.data_offset () as usize
-					+ item_header.data_size () as usize
-				];
-
-			self.index += 1;
-
-			Some (
-				BtrfsLeafItem::from_bytes (
-					item_header,
-					item_data)
-			)
-
-		} else {
-
-			None
-
-		}
+		debug_struct.finish ()
 
 	}
 

@@ -20,10 +20,13 @@
 
 	crc = "1.4"
 	flate2 = "0.2"
+	itertools = "0.6"
 	lazy_static = "0.2"
 	libc = "0.2"
+	memmap = "0.5"
 	minilzo = "0.2"
 	nix = "0.8"
+	output = "0.6"
 	uuid = "0.5"
 
 # noet ts=4 filetype=toml

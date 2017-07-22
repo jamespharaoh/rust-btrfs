@@ -1,21 +1,15 @@
+use std::borrow::Cow;
+use std::fmt::Debug;
+use std::fmt::Error as FmtError;
+use std::fmt::Formatter;
 use std::mem;
 
 use diskformat::*;
 
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
+#[ derive (Copy, Clone, Eq, Hash, Ord, PartialEq, PartialOrd) ]
 pub struct BtrfsDirItem <'a> {
 	header: & 'a BtrfsLeafItemHeader,
 	data_bytes: & 'a [u8],
-}
-
-#[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsDirItemData {
-	child_key: BtrfsKey,
-	transaction_id: u64,
-	data_size: u16,
-	name_size: u16,
-	child_type: u8,
 }
 
 impl <'a> BtrfsDirItem <'a> {
@@ -123,6 +117,61 @@ impl <'a> BtrfsDirItem <'a> {
 			mem::size_of::<BtrfsDirItemData> ()
 			+ self.name_size () as usize
 		]
+
+	}
+
+	pub fn name_to_string_lossy (
+		& self,
+	) -> Cow <str> {
+
+		String::from_utf8_lossy (
+			self.name ())
+
+	}
+
+}
+
+impl <'a> Debug for BtrfsDirItem <'a> {
+
+	fn fmt (
+		& self,
+		formatter: & mut Formatter,
+	) -> Result <(), FmtError> {
+
+		let mut debug_struct =
+			formatter.debug_struct (
+				"BtrfsDirItem");
+
+		self.header ().debug_struct (
+			& mut debug_struct);
+
+		debug_struct.field (
+			"child_key",
+			& NakedString::from (
+				self.child_key ().to_string ()));
+
+		debug_struct.field (
+			"transaction_id",
+			& self.transaction_id ());
+
+		debug_struct.field (
+			"data_size",
+			& self.data_size ());
+
+		debug_struct.field (
+			"name",
+			& self.name_to_string_lossy ());
+
+		debug_struct.field (
+			"child_type",
+			& self.child_type ());
+
+		debug_struct.field (
+			"data",
+			& NakedString::from (
+				"..."));
+
+		debug_struct.finish ()
 
 	}
 

@@ -14,9 +14,12 @@ extern crate lazy_static;
 extern crate nix;
 
 extern crate crc;
+extern crate itertools;
 extern crate libc;
 extern crate flate2;
+extern crate memmap;
 extern crate minilzo;
+extern crate output;
 extern crate uuid;
 
 pub mod compress;

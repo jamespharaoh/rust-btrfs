@@ -1,5 +1,3 @@
-use std::mem;
-
 use diskformat::*;
 
 #[ derive (Clone, Debug) ]
@@ -11,15 +9,8 @@ pub enum BtrfsLeafItem <'a> {
 	ExtentItem (BtrfsExtentItem <'a>),
 	InodeItem (BtrfsInodeItem <'a>),
 	Invalid (BtrfsInvalidItem <'a>),
+	RootItem (BtrfsRootItem <'a>),
 	Unknown (BtrfsUnknownItem <'a>),
-}
-
-#[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsLeafItemHeader {
-	key: BtrfsKey,
-	data_offset: u32,
-	data_size: u32,
 }
 
 impl <'a> BtrfsLeafItem <'a> {
@@ -29,7 +20,7 @@ impl <'a> BtrfsLeafItem <'a> {
 		data_bytes: & 'a [u8],
 	) -> BtrfsLeafItem <'a> {
 
-		match header.key.item_type () {
+		match header.key ().item_type () {
 
 			BTRFS_INODE_ITEM_TYPE =>
 				BtrfsInodeItem::from_bytes (
@@ -103,6 +94,18 @@ impl <'a> BtrfsLeafItem <'a> {
 
 				),
 
+			BTRFS_ROOT_ITEM_TYPE =>
+				BtrfsRootItem::from_bytes (
+					header,
+					data_bytes,
+				).map (
+					|root_item|
+
+					BtrfsLeafItem::RootItem (
+						root_item)
+
+				),
+
 			_ =>
 				Ok (
 					BtrfsLeafItem::Unknown (
@@ -156,74 +159,17 @@ impl <'a> BtrfsLeafItem <'a> {
 			& BtrfsLeafItem::Invalid (ref invalid_item) =>
 				invalid_item.header (),
 
+			& BtrfsLeafItem::RootItem (ref root_item) =>
+				root_item.header (),
+
 		}
 
 	}
 
 	pub fn key (& self) -> BtrfsKey {
-		self.header ().key
+		self.header ().key ()
 	}
 
 }
-
-impl BtrfsLeafItemHeader {
-
-	pub fn from_bytes (
-		bytes: & [u8],
-	) -> Result <& BtrfsLeafItemHeader, String> {
-
-		// sanity check
-
-		if bytes.len () != mem::size_of::<BtrfsLeafItemHeader> () {
-
-			return Err (
-				format! (
-					"Must be exactly 0x{:x} bytes",
-					mem::size_of::<BtrfsLeafItemHeader> ()));
-
-		}
-
-		// cast
-
-		Ok (
-			unsafe {
-				& * (bytes.as_ptr () as * const BtrfsLeafItemHeader)
-			}
-		)
-
-	}
-
-	pub fn key (& self) -> BtrfsKey {
-		self.key
-	}
-
-	pub fn object_id (& self) -> u64 {
-		self.key.object_id ()
-	}
-
-	pub fn item_type (& self) -> u8 {
-		self.key.item_type ()
-	}
-
-	pub fn offset (& self) -> u64 {
-		self.key.offset ()
-	}
-
-	pub fn data_offset (& self) -> u32 {
-		self.data_offset
-	}
-
-	pub fn data_size (& self) -> u32 {
-		self.data_size
-	}
-
-}
-
-pub const BTRFS_INODE_ITEM_TYPE: u8 = 0x01;
-pub const BTRFS_DIR_ITEM_TYPE: u8 = 0x54;
-pub const BTRFS_DIR_INDEX_TYPE: u8 = 0x60;
-pub const BTRFS_EXTENT_DATA_TYPE: u8 = 0x6c;
-pub const BTRFS_EXTENT_ITEM_TYPE: u8 = 0xa8;
-pub const BTRFS_CHUNK_ITEM_TYPE: u8 = 0xe4;
 
 // ex: noet ts=4 filetype=rust

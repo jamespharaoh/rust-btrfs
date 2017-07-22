@@ -13,14 +13,13 @@ pub struct BtrfsChunkTree <'a> {
 impl <'a> BtrfsChunkTree <'a> {
 
 	pub fn new (
-		devices: & 'a BtrfsDeviceMap,
-		superblock: & BtrfsSuperblock,
+		devices: & 'a BtrfsDeviceSet,
+		superblock: BtrfsSuperblock <'a>,
 	) -> Result <BtrfsChunkTree <'a>, String> {
 
 		let extent_tree_items =
 			Self::read_system_extent_tree (
 				devices,
-				superblock,
 			) ?;
 
 		let mut chunk_items_by_offset =
@@ -53,8 +52,7 @@ impl <'a> BtrfsChunkTree <'a> {
 	}
 
 	fn read_system_extent_tree (
-		devices: & 'a BtrfsDeviceMap,
-		superblock: & BtrfsSuperblock,
+		devices: & 'a BtrfsDeviceSet <'a>,
 	) -> Result <HashMap <BtrfsKey, BtrfsLeafItem <'a>>, String> {
 
 		let mut extent_tree_items: HashMap <BtrfsKey, BtrfsLeafItem> =
@@ -62,8 +60,7 @@ impl <'a> BtrfsChunkTree <'a> {
 
 		Self::read_system_extent_tree_recurse (
 			devices,
-			superblock,
-			superblock.chunk_tree_logical_address (),
+			devices.superblock ().chunk_tree_logical_address (),
 			& mut extent_tree_items,
 		) ?;
 
@@ -72,29 +69,31 @@ impl <'a> BtrfsChunkTree <'a> {
 	}
 
 	fn read_system_extent_tree_recurse (
-		devices: & 'a BtrfsDeviceMap,
-		superblock: & BtrfsSuperblock,
+		devices: & 'a BtrfsDeviceSet <'a>,
 		logical_address: u64,
 		extent_tree_items: & mut HashMap <BtrfsKey, BtrfsLeafItem <'a>>,
 	) -> Result <(), String> {
 
-		let (device_id, device_address) =
-			superblock.system_logical_to_physical (
+		let node_physical_address =
+			devices.system_logical_to_physical (
 				logical_address,
-			).expect ("Lookup logical address");
+			).ok_or (
 
-		let device =
-			devices.get (
-				& device_id,
-			).expect ("Lookup device");
+				format! (
+					"Can't map logical address: 0x{:x}",
+					logical_address)
+
+			) ?;
 
 		let node_bytes =
-			device.slice_at (
-				device_address as usize,
-				superblock.node_size () as usize);
+			devices.system_slice_at_logical_address (
+				logical_address,
+				devices.superblock ().node_size () as usize,
+			) ?;
 
 		let node =
 			BtrfsNode::from_bytes (
+				node_physical_address,
 				node_bytes,
 			) ?;
 
@@ -106,8 +105,7 @@ impl <'a> BtrfsChunkTree <'a> {
 
 					Self::read_system_extent_tree_recurse (
 						devices,
-						superblock,
-						item.key ().offset (),
+						item.block_number (),
 						extent_tree_items,
 					) ?;
 
@@ -137,7 +135,7 @@ impl <'a> BtrfsChunkTree <'a> {
 	pub fn logical_to_physical_address (
 		& self,
 		logical_address: u64,
-	) -> Option <(u64, u64)> {
+	) -> Option <BtrfsPhysicalAddress> {
 
 		// TODO waiting for range to land in stable rust
 
@@ -157,13 +155,11 @@ impl <'a> BtrfsChunkTree <'a> {
 					chunk_item.stripes () [0];
 
 				return Some (
-					(
+					BtrfsPhysicalAddress::new (
 						chunk_item_stripe.device_id (),
 						logical_address
 							- chunk_item_offset
-							+ chunk_item_stripe.offset (),
-					)
-				);
+							+ chunk_item_stripe.offset ()));
 
 			}
 

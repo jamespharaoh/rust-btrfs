@@ -9,11 +9,6 @@ pub struct BtrfsChunkItem <'a> {
 	data_bytes: & 'a [u8],
 }
 
-pub struct BtrfsChunkItemSimple <'a> {
-	key: & 'a BtrfsKey,
-	data: & 'a BtrfsChunkItemData,
-}
-
 #[ repr (C, packed) ]
 #[ derive (Copy, Clone, Debug) ]
 pub struct BtrfsChunkItemData {
@@ -92,45 +87,6 @@ impl <'a> BtrfsChunkItem <'a> {
 
 	pub fn stripes (& self) -> & [BtrfsChunkItemStripeData] {
 		self.data ().stripes ()
-	}
-
-}
-
-impl <'a> BtrfsChunkItemSimple <'a> {
-
-	pub fn new (
-		key: & 'a BtrfsKey,
-		data: & 'a BtrfsChunkItemData,
-	) -> Result <BtrfsChunkItemSimple <'a>, String> {
-
-		if key.item_type () != BTRFS_CHUNK_ITEM_TYPE {
-
-			return Err (
-				format! (
-					"Invalid key type for chunk item: 0x{:02x}",
-					key.item_type ()));
-
-		}
-
-		Ok (
-			BtrfsChunkItemSimple {
-				key: key,
-				data: data,
-			}
-		)
-
-	}
-
-	pub fn key (& self) -> & BtrfsKey {
-		self.key
-	}
-
-	pub fn data (& self) -> & BtrfsChunkItemData {
-		self.data
-	}
-
-	pub fn stripes (& self) -> & [BtrfsChunkItemStripeData] {
-		self.data.stripes ()
 	}
 
 }

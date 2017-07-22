@@ -1,42 +1,118 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use diskformat::*;
 
-pub struct BtrfsTree {
+pub struct BtrfsTree <'a> {
+	tree_items: BTreeMap <BtrfsKey, BtrfsLeafItem <'a>>,
 }
 
-impl BtrfsTree {
+impl <'a> BtrfsTree <'a> {
 
-	/*
-	pub fn read_tree <'a> (
-		devices: & HashMap <u64, & 'a [u8]>,
-		superblock: & BtrfsSuperblock,
-		chunk_tree: & BtrfsChunkTree,
-		tree_logical_address: u64,
-	) -> Result <HashMap <BtrfsKey, BtrfsLeafItem <'a>>, String> {
-
-		let mut tree_items: HashMap <BtrfsKey, BtrfsLeafItem> =
-			HashMap::new ();
-
-		Self::read_tree_recurse (
-			devices,
-			superblock,
-			chunk_tree,
-			tree_logical_address,
-			& mut tree_items,
-		) ?;
-
-		Ok (tree_items)
-
-	}
-	*/
-
-	pub fn read_tree_recurse <'a> (
-		devices: & 'a BtrfsDeviceMap,
-		superblock: & BtrfsSuperblock,
+	pub fn read_tree_logical_address (
+		devices: & 'a BtrfsDeviceSet <'a>,
 		chunk_tree: & BtrfsChunkTree,
 		logical_address: u64,
-		tree_items: & mut HashMap <BtrfsKey, BtrfsLeafItem <'a>>,
+	) -> Result <BtrfsTree <'a>, String> {
+
+		let (btrfs_tree, errors) =
+			Self::read_tree_tolerant_logical_address (
+				devices,
+				chunk_tree,
+				logical_address,
+			);
+
+		if errors.is_empty () {
+			Ok (btrfs_tree)
+		} else {
+			Err (errors.into_iter ().next ().unwrap ())
+		}
+
+	}
+
+	pub fn read_tree_physical_address (
+		devices: & 'a BtrfsDeviceSet <'a>,
+		chunk_tree: & BtrfsChunkTree,
+		physical_address: BtrfsPhysicalAddress,
+	) -> Result <BtrfsTree <'a>, String> {
+
+		let (btrfs_tree, errors) =
+			Self::read_tree_tolerant_physical_address (
+				devices,
+				chunk_tree,
+				physical_address,
+			);
+
+		if errors.is_empty () {
+			Ok (btrfs_tree)
+		} else {
+			Err (errors.into_iter ().next ().unwrap ())
+		}
+
+	}
+
+	pub fn read_tree_tolerant_physical_address (
+		devices: & 'a BtrfsDeviceSet <'a>,
+		chunk_tree: & BtrfsChunkTree,
+		physical_address: BtrfsPhysicalAddress,
+	) -> (BtrfsTree <'a>, Vec <String>) {
+
+		let mut tree_items: BTreeMap <BtrfsKey, BtrfsLeafItem> =
+			BTreeMap::new ();
+
+		let mut errors: Vec <String> =
+			Vec::new ();
+
+		Self::read_tree_recurse_physical_address (
+			devices,
+			chunk_tree,
+			physical_address,
+			& mut tree_items,
+			& mut errors,
+		);
+
+		(
+			BtrfsTree {
+				tree_items: tree_items,
+			},
+			errors,
+		)
+
+	}
+
+	pub fn read_tree_tolerant_logical_address (
+		devices: & 'a BtrfsDeviceSet <'a>,
+		chunk_tree: & BtrfsChunkTree,
+		logical_address: u64,
+	) -> (BtrfsTree <'a>, Vec <String>) {
+
+		let mut tree_items: BTreeMap <BtrfsKey, BtrfsLeafItem> =
+			BTreeMap::new ();
+
+		let mut errors: Vec <String> =
+			Vec::new ();
+
+		Self::read_tree_recurse_logical_address (
+			devices,
+			chunk_tree,
+			logical_address,
+			& mut tree_items,
+			& mut errors,
+		);
+
+		(
+			BtrfsTree {
+				tree_items: tree_items,
+			},
+			errors,
+		)
+
+	}
+
+	pub fn read_tree_recurse_logical_address (
+		devices: & 'a BtrfsDeviceSet <'a>,
+		chunk_tree: & BtrfsChunkTree,
+		logical_address: u64,
+		tree_items: & mut BTreeMap <BtrfsKey, BtrfsLeafItem <'a>>,
 		errors: & mut Vec <String>,
 	) {
 
@@ -56,31 +132,69 @@ impl BtrfsTree {
 
 		}
 
-		let (device_id, device_address) =
+		let physical_address =
 			logical_to_physical_result.unwrap ();
 
+		Self::read_tree_recurse_physical_address (
+			devices,
+			chunk_tree,
+			physical_address,
+			tree_items,
+			errors,
+		)
+
+	}
+
+	pub fn read_tree_recurse_physical_address (
+		devices: & 'a BtrfsDeviceSet <'a>,
+		chunk_tree: & BtrfsChunkTree,
+		physical_address: BtrfsPhysicalAddress,
+		tree_items: & mut BTreeMap <BtrfsKey, BtrfsLeafItem <'a>>,
+		errors: & mut Vec <String>,
+	) {
+
 		let device =
-			devices.get (
-				& device_id,
+			devices.device (
+				physical_address.device_id (),
 			).expect ("Lookup device");
 
-		let node_bytes =
+		let node_bytes_result =
 			device.slice_at (
-				device_address as usize,
-				superblock.node_size () as usize,
+				physical_address.offset () as usize,
+				devices.superblock ().node_size () as usize,
 			);
+
+		if node_bytes_result.is_none () {
+
+			errors.push (
+				format! (
+					"Physical address range invalid on device {}: 0x{:x} to \
+					0x{:x}",
+					physical_address.device_id (),
+					physical_address.offset (),
+					physical_address.offset ()
+						+ devices.superblock ().node_size () as u64));
+
+			return;
+
+		}
+
+		let node_bytes =
+			node_bytes_result.unwrap ();
 
 		let node_result =
 			BtrfsNode::from_bytes (
+				physical_address,
 				node_bytes,
 			);
 
 		if let Err (error) = node_result {
 
-			format! (
-				"Error reading node as 0x{:x}: {}",
-				logical_address,
-				error);
+			errors.push (
+				format! (
+					"Error reading node at {}: {}",
+					physical_address,
+					error));
 
 			return;
 
@@ -95,9 +209,8 @@ impl BtrfsTree {
 
 				for item in internal_node.items () {
 
-					Self::read_tree_recurse (
+					Self::read_tree_recurse_logical_address (
 						devices,
-						superblock,
 						chunk_tree,
 						item.key ().offset (),
 						tree_items,
@@ -126,3 +239,5 @@ impl BtrfsTree {
 	}
 
 }
+
+// ex: noet ts=4 filetype=rust
