@@ -42,7 +42,35 @@ impl BtrfsKey {
 
 		format! (
 			"{}/{} @ 0x{:x}",
+			self.object_id,
 			self.item_type,
+			self.offset)
+
+	}
+
+	pub fn to_string_decimal (& self) -> String {
+
+		format! (
+			"{}/{} @ {}",
+			self.object_id,
+			self.item_type,
+			self.offset)
+
+	}
+
+	pub fn to_string_no_type (& self) -> String {
+
+		format! (
+			"{} @ 0x{:x}",
+			self.object_id,
+			self.offset)
+
+	}
+
+	pub fn to_string_no_type_decimal (& self) -> String {
+
+		format! (
+			"{} @ {}",
 			self.object_id,
 			self.offset)
 
@@ -60,8 +88,8 @@ impl Debug for BtrfsKey {
 		formatter.write_fmt (
 			format_args! (
 				"BtrfsKey ({}/{} @ 0x{:x})",
-				self.item_type,
 				self.object_id,
+				self.item_type,
 				self.offset))
 
 	}

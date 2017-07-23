@@ -1,9 +1,4 @@
-use std::fmt::Debug;
-use std::fmt::DebugStruct;
-use std::fmt::Error as FmtError;
-use std::fmt::Formatter;
-
-use super::super::*;
+use super::super::prelude::*;
 
 #[ repr (C, packed) ]
 #[ derive (Copy, Clone, Eq, Hash, Ord, PartialEq, PartialOrd) ]
@@ -15,12 +10,16 @@ pub struct BtrfsDirItemData {
 	pub child_type: u8,
 }
 
-impl BtrfsDirItemData {
+impl Debug for BtrfsDirItemData {
 
-	pub fn debug_struct (
+	fn fmt (
 		& self,
-		debug_struct: & mut DebugStruct,
-	) {
+		formatter: & mut Formatter,
+	) -> Result <(), FmtError> {
+
+		let mut debug_struct =
+			formatter.debug_struct (
+				"BtrfsDirItemData");
 
 		debug_struct.field (
 			"child_key",
@@ -42,24 +41,6 @@ impl BtrfsDirItemData {
 		debug_struct.field (
 			"child_type",
 			& self.child_type);
-
-	}
-
-}
-
-impl Debug for BtrfsDirItemData {
-
-	fn fmt (
-		& self,
-		formatter: & mut Formatter,
-	) -> Result <(), FmtError> {
-
-		let mut debug_struct =
-			formatter.debug_struct (
-				"BtrfsDirItemData");
-
-		self.debug_struct (
-			& mut debug_struct);
 
 		debug_struct.finish ()
 

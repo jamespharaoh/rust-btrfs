@@ -1,5 +1,7 @@
 use std::error::Error;
 use std::fs::File;
+use std::io::Seek;
+use std::io::SeekFrom;
 use std::path::PathBuf;
 
 use memmap::Mmap;
@@ -24,7 +26,7 @@ impl BtrfsMmapDeviceSet {
 
 		for device_path in device_paths.iter () {
 
-			let file =
+			let mut file =
 				File::open (
 					device_path,
 				).map_err (
@@ -37,10 +39,25 @@ impl BtrfsMmapDeviceSet {
 
 				) ?;
 
+			let file_size =
+				file.seek (
+					SeekFrom::End (0),
+				).map_err (
+					|error|
+
+					format! (
+						"Error finding file size for {}: {}",
+						device_path.to_string_lossy (),
+						error.description ())
+
+				) ?;
+
 			let mmap =
-				Mmap::open (
+				Mmap::open_with_offset (
 					& file,
 					Protection::Read,
+					0,
+					file_size as usize,
 				).map_err (
 					|error|
 

@@ -5,6 +5,7 @@ mod core;
 mod filesystem;
 mod item;
 mod node;
+mod prelude;
 mod tree;
 mod naked_string;
 

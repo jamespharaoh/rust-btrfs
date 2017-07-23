@@ -86,24 +86,20 @@ impl <'a> BtrfsRootTree <'a> {
 		self.tree_items.values ().filter (
 			|item|
 
-			item.key ().item_type () == BTRFS_ROOT_ITEM_TYPE
+			item.item_type () == BTRFS_ROOT_ITEM_TYPE
 			&& (
-				item.key ().object_id () as i64 >= 128
-				|| item.key ().object_id () as i64 <= -128
+				item.object_id () as i64 >= 128
+				|| item.object_id () as i64 <= -128
+				|| item.object_id () == 5
 			)
 
 		).map (
-			|item|
+			|root_item|
 
-			match item {
-
-				& BtrfsLeafItem::RootItem (ref item) =>
-					item,
-
-				_ =>
-					panic! (),
-
-			}
+			leaf_item_destructure! (
+				root_item,
+				RootItem,
+			).unwrap ()
 
 		).collect ()
 
@@ -124,6 +120,27 @@ impl <'a> BtrfsRootTree <'a> {
 			leaf_item_destructure! (
 				root_ref,
 				RootRef,
+			).unwrap ()
+
+		).collect ()
+
+	}
+
+	pub fn subvolume_root_backrefs (
+		& 'a self,
+	) -> Vec <& 'a BtrfsRootBackref <'a>> {
+
+		self.tree_items.values ().filter (
+			|item|
+
+			item.item_type () == BTRFS_ROOT_BACKREF_ITEM_TYPE
+
+		).map (
+			|root_backref|
+
+			leaf_item_destructure! (
+				root_backref,
+				RootBackref,
 			).unwrap ()
 
 		).collect ()
@@ -187,17 +204,20 @@ impl <'a> BtrfsRootTree <'a> {
 	) -> Option <& 'a BtrfsRootItem <'a>> {
 
 		self.default_root_dir_item ().and_then (
-			|default_root_dir_item|
+			|default_root_dir_item| {
+
+			let default_root_dir_item_entry =
+				default_root_dir_item.entries ().next ().unwrap ();
 
 			self.get_by_key (
 				BtrfsKey::new (
-					default_root_dir_item.child_object_id (),
+					default_root_dir_item_entry.child_object_id (),
 					BTRFS_ROOT_ITEM_TYPE,
 					0,
 				),
 			)
 
-		).map (
+		}).map (
 			|root_item|
 
 			leaf_item_destructure! (

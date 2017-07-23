@@ -8,7 +8,9 @@ pub enum BtrfsLeafItem <'a> {
 	ExtentData (BtrfsExtentData <'a>),
 	ExtentItem (BtrfsExtentItem <'a>),
 	InodeItem (BtrfsInodeItem <'a>),
+	InodeRef (BtrfsInodeRef <'a>),
 	Invalid (BtrfsInvalidItem <'a>),
+	RootBackref (BtrfsRootBackref <'a>),
 	RootItem (BtrfsRootItem <'a>),
 	RootRef (BtrfsRootRef <'a>),
 	Unknown (BtrfsUnknownItem <'a>),
@@ -95,6 +97,30 @@ impl <'a> BtrfsLeafItem <'a> {
 
 				),
 
+			BTRFS_INODE_REF_TYPE =>
+				BtrfsInodeRef::from_bytes (
+					header,
+					data_bytes,
+				).map (
+					|inode_ref|
+
+					BtrfsLeafItem::InodeRef (
+						inode_ref)
+
+				),
+
+			BTRFS_ROOT_BACKREF_ITEM_TYPE =>
+				BtrfsRootBackref::from_bytes (
+					header,
+					data_bytes,
+				).map (
+					|root_backref|
+
+					BtrfsLeafItem::RootBackref (
+						root_backref)
+
+				),
+
 			BTRFS_ROOT_ITEM_TYPE =>
 				BtrfsRootItem::from_bytes (
 					header,
@@ -168,8 +194,14 @@ impl <'a> BtrfsLeafItem <'a> {
 			& BtrfsLeafItem::InodeItem (ref inode_item) =>
 				Box::new (inode_item),
 
+			& BtrfsLeafItem::InodeRef (ref inode_ref) =>
+				Box::new (inode_ref),
+
 			& BtrfsLeafItem::Invalid (ref invalid_item) =>
 				Box::new (invalid_item),
+
+			& BtrfsLeafItem::RootBackref (ref root_backref) =>
+				Box::new (root_backref),
 
 			& BtrfsLeafItem::RootItem (ref root_item) =>
 				Box::new (root_item),

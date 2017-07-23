@@ -6,18 +6,18 @@ use std::mem;
 
 use diskformat::*;
 
-#[ derive (Copy, Clone, Eq, Hash, PartialEq) ]
-pub struct BtrfsDirIndex <'a> {
+#[ derive (Copy, Clone, Eq, Hash, Ord, PartialEq, PartialOrd) ]
+pub struct BtrfsDirItemEntry <'a> {
 	header: & 'a BtrfsLeafItemHeader,
 	data_bytes: & 'a [u8],
 }
 
-impl <'a> BtrfsDirIndex <'a> {
+impl <'a> BtrfsDirItemEntry <'a> {
 
 	pub fn from_bytes (
 		header: & 'a BtrfsLeafItemHeader,
 		data_bytes: & 'a [u8],
-	) -> Result <BtrfsDirIndex <'a>, String> {
+	) -> Result <BtrfsDirItemEntry <'a>, String> {
 
 		// sanity check
 
@@ -32,7 +32,7 @@ impl <'a> BtrfsDirIndex <'a> {
 
 		// create dir item
 
-		let dir_item = BtrfsDirIndex {
+		let dir_item = BtrfsDirItemEntry {
 			header: header,
 			data_bytes: data_bytes,
 		};
@@ -60,6 +60,10 @@ impl <'a> BtrfsDirIndex <'a> {
 
 	}
 
+	pub fn header (& self) -> & BtrfsLeafItemHeader {
+		self.header
+	}
+
 	pub fn data (& self) -> & BtrfsDirItemData {
 
 		unsafe {
@@ -73,6 +77,10 @@ impl <'a> BtrfsDirIndex <'a> {
 
 	pub fn child_key (& self) -> BtrfsKey {
 		self.data ().child_key
+	}
+
+	pub fn child_object_id (& self) -> u64 {
+		self.data ().child_key.object_id ()
 	}
 
 	pub fn transaction_id (& self) -> u64 {
@@ -115,7 +123,7 @@ impl <'a> BtrfsDirIndex <'a> {
 
 }
 
-impl <'a> BtrfsLeafItemContents <'a> for BtrfsDirIndex <'a> {
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsDirItemEntry <'a> {
 
 	fn header (& self) -> & BtrfsLeafItemHeader {
 		self.header
@@ -123,7 +131,7 @@ impl <'a> BtrfsLeafItemContents <'a> for BtrfsDirIndex <'a> {
 
 }
 
-impl <'a> Debug for BtrfsDirIndex <'a> {
+impl <'a> Debug for BtrfsDirItemEntry <'a> {
 
 	fn fmt (
 		& self,
@@ -132,12 +140,10 @@ impl <'a> Debug for BtrfsDirIndex <'a> {
 
 		let mut debug_struct =
 			formatter.debug_struct (
-				"BtrfsDirIndex");
+				"BtrfsDirItemEntry");
 
-		debug_struct.field (
-			"key",
-			& NakedString::from (
-				self.key ().to_string_decimal ()));
+		self.header ().debug_struct (
+			& mut debug_struct);
 
 		debug_struct.field (
 			"child_key",
@@ -159,6 +165,11 @@ impl <'a> Debug for BtrfsDirIndex <'a> {
 		debug_struct.field (
 			"child_type",
 			& self.child_type ());
+
+		debug_struct.field (
+			"data",
+			& NakedString::from (
+				"..."));
 
 		debug_struct.finish ()
 

@@ -1,13 +1,10 @@
-use output::Output;
-
-use super::*;
-use super::BtrfsTree;
+use super::prelude::*;
 
 pub struct BtrfsFilesystem <'a> {
 	devices: & 'a BtrfsDeviceSet <'a>,
 	chunk_tree: BtrfsChunkTree <'a>,
 	root_tree: BtrfsRootTree <'a>,
-	fs_tree: BtrfsFsTree <'a>,
+	filesystem_trees: HashMap <u64, BtrfsFilesystemTree <'a>>,
 }
 
 impl <'a> BtrfsFilesystem <'a> {
@@ -121,31 +118,26 @@ impl <'a> BtrfsFilesystem <'a> {
 
 		output_job.complete ();
 
-		// read fs tree
+		// read filesystem trees
 
-		let fs_tree = {
+		let filesystem_trees = {
 
 			let output_job =
 				output_job_start! (
 					output,
-					"Reading fs tree");
+					"Reading filesystem trees");
 
-			let fs_tree_root_item =
-				root_tree.fs_tree_root_item ().ok_or (
-					"Can't find fs tree",
-				) ?;
-
-			let fs_tree =
-				BtrfsFsTree::read_logical_address (
+			let filesystem_trees =
+				Self::read_filesystem_trees (
 					output,
 					& devices,
 					& chunk_tree,
-					fs_tree_root_item.root_node_block_number (),
+					& root_tree,
 				) ?;
 
 			output_job.complete ();
 
-			fs_tree
+			filesystem_trees
 
 		};
 
@@ -155,7 +147,7 @@ impl <'a> BtrfsFilesystem <'a> {
 			devices: devices,
 			chunk_tree: chunk_tree,
 			root_tree: root_tree,
-			fs_tree: fs_tree,
+			filesystem_trees: filesystem_trees,
 		})
 
 	}
@@ -219,22 +211,28 @@ impl <'a> BtrfsFilesystem <'a> {
 
 		output_job.complete ();
 
-		// read fs tree
+		// read filesystem trees
 
-		let output_job =
-			output_job_start! (
-				output,
-				"Reading fs tree");
+		let filesystem_trees = {
 
-		let fs_tree =
-			BtrfsFsTree::read_logical_address (
-				output,
-				& devices,
-				& chunk_tree,
-				root_backup.fs_root,
-			) ?;
+			let output_job =
+				output_job_start! (
+					output,
+					"Reading filesystem trees");
 
-		output_job.complete ();
+			let filesystem_trees =
+				Self::read_filesystem_trees (
+					output,
+					& devices,
+					& chunk_tree,
+					& root_tree,
+				) ?;
+
+			output_job.complete ();
+
+			filesystem_trees
+
+		};
 
 		// return
 
@@ -242,45 +240,63 @@ impl <'a> BtrfsFilesystem <'a> {
 			devices: devices,
 			chunk_tree: chunk_tree,
 			root_tree: root_tree,
-			fs_tree: fs_tree,
+			filesystem_trees: filesystem_trees,
 		})
 
 	}
 
-	pub fn file_tree (
-		& 'a self,
+	pub fn read_filesystem_trees <'b> (
 		output: & Output,
-		tree_id: u64,
-	) -> Result <BtrfsFileTree <'a>, String> {
+		devices: & 'a BtrfsDeviceSet,
+		chunk_tree: & 'b BtrfsChunkTree <'b>,
+		root_tree: & 'b BtrfsRootTree <'b>,
+	) -> Result <HashMap <u64, BtrfsFilesystemTree <'a>>, String> {
+
+		let mut filesystem_trees: HashMap <u64, BtrfsFilesystemTree <'a>> =
+			HashMap::new ();
+
+		for root_item in root_tree.subvolume_root_items () {
+
+			filesystem_trees.insert (
+				root_item.object_id (),
+				Self::read_filesystem_tree (
+					output,
+					devices,
+					chunk_tree,
+					root_item,
+				) ?,
+			);
+
+		}
+
+		Ok (filesystem_trees)
+
+	}
+
+	pub fn read_filesystem_tree <'b> (
+		output: & Output,
+		devices: & 'a BtrfsDeviceSet,
+		chunk_tree: & 'b BtrfsChunkTree <'b>,
+		root_item: & 'b BtrfsRootItem <'b>,
+	) -> Result <BtrfsFilesystemTree <'a>, String> {
 
 		let output_job =
 			output_job_start! (
 				output,
-				"Reading file tree {}",
-				tree_id);
+				"Reading filesystem tree {}",
+				root_item.object_id ());
 
-		let root_item =
-			self.root_item (
-				tree_id,
-			).ok_or (
-
-				format! (
-					"No such tree: {}",
-					tree_id)
-
-			) ?;
-
-		let file_tree =
-			BtrfsFileTree::read_logical_address (
+		let filesystem_tree =
+			BtrfsFilesystemTree::read_logical_address (
 				output,
-				& self.devices,
-				& self.chunk_tree,
+				devices,
+				chunk_tree,
 				root_item.root_node_block_number (),
 			) ?;
 
 		output_job.complete ();
 
-		Ok (file_tree)
+		Ok (filesystem_tree)
 
 	}
 
@@ -300,8 +316,15 @@ impl <'a> BtrfsFilesystem <'a> {
 		& self.root_tree
 	}
 
-	pub fn fs_tree (& 'a self) -> & 'a BtrfsFsTree <'a> {
-		& self.fs_tree
+	pub fn filesystem_tree (
+		& 'a self,
+		tree_id: u64,
+	) -> Option <& 'a BtrfsFilesystemTree <'a>> {
+
+		self.filesystem_trees.get (
+			& tree_id,
+		)
+
 	}
 
 	pub fn default_root_dir_item (
@@ -322,6 +345,18 @@ impl <'a> BtrfsFilesystem <'a> {
 		self.root_tree.default_subvolume_root_item ()
 	}
 
+	pub fn subvolume_root_refs (
+		& 'a self,
+	) -> Vec <& 'a BtrfsRootRef <'a>> {
+		self.root_tree.subvolume_root_refs ()
+	}
+
+	pub fn subvolume_root_backrefs (
+		& 'a self,
+	) -> Vec <& 'a BtrfsRootBackref <'a>> {
+		self.root_tree.subvolume_root_backrefs ()
+	}
+
 	pub fn root_item (
 		& 'a self,
 		tree_id: u64,
@@ -330,6 +365,76 @@ impl <'a> BtrfsFilesystem <'a> {
 		self.root_tree.root_item (
 			tree_id,
 		)
+
+	}
+
+	pub fn subvolume_path (
+		& 'a self,
+		root_backref: & 'a BtrfsRootBackref <'a>,
+	) -> Result <PathBuf, String> {
+
+		// TODO handle subvolume recursion
+
+		let parent_filesystem_tree =
+			self.filesystem_tree (
+				root_backref.offset (),
+			).ok_or (
+
+				format! (
+					"Can't find parent filesystem for subvolume {}",
+					root_backref.object_id ())
+
+			) ?;
+
+		let mut path_parts: LinkedList <PathBuf> =
+			LinkedList::new ();
+
+		path_parts.push_front (
+			PathBuf::from (
+				OsStr::from_bytes (
+					root_backref.name ())));
+
+		let mut object_id =
+			root_backref.directory_id ();
+
+		loop {
+
+			let parent_inode_ref =
+				parent_filesystem_tree.inode_refs (
+					object_id,
+				).into_iter ().next ().ok_or (
+
+					format! (
+						"Can't find inode ref {}",
+						object_id)
+
+				) ?.entries ().next ().unwrap ();
+
+			if parent_inode_ref.offset () == object_id {
+				break;
+			}
+
+			path_parts.push_front (
+				PathBuf::from (
+					OsStr::from_bytes (
+						parent_inode_ref.name ())));
+
+			object_id =
+				parent_inode_ref.offset ();
+
+		}
+
+		let mut path =
+			PathBuf::from ("/");
+
+		for path_part in path_parts {
+
+			path.push (
+				path_part);
+
+		}
+
+		Ok (path)
 
 	}
 

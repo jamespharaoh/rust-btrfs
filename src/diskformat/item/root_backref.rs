@@ -7,17 +7,17 @@ use std::mem;
 use diskformat::*;
 
 #[ derive (Copy, Clone, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsRootRef <'a> {
+pub struct BtrfsRootBackref <'a> {
 	header: & 'a BtrfsLeafItemHeader,
 	data_bytes: & 'a [u8],
 }
 
-impl <'a> BtrfsRootRef <'a> {
+impl <'a> BtrfsRootBackref <'a> {
 
 	pub fn from_bytes (
 		header: & 'a BtrfsLeafItemHeader,
 		data_bytes: & 'a [u8],
-	) -> Result <BtrfsRootRef <'a>, String> {
+	) -> Result <BtrfsRootBackref <'a>, String> {
 
 		// sanity check
 
@@ -30,9 +30,9 @@ impl <'a> BtrfsRootRef <'a> {
 
 		}
 
-		// create dir item
+		// create root backref
 
-		let root_ref = BtrfsRootRef {
+		let root_ref = BtrfsRootBackref {
 			header: header,
 			data_bytes: data_bytes,
 		};
@@ -109,7 +109,7 @@ impl <'a> BtrfsRootRef <'a> {
 
 }
 
-impl <'a> BtrfsLeafItemContents <'a> for BtrfsRootRef <'a> {
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsRootBackref <'a> {
 
 	fn header (& self) -> & BtrfsLeafItemHeader {
 		self.header
@@ -117,7 +117,7 @@ impl <'a> BtrfsLeafItemContents <'a> for BtrfsRootRef <'a> {
 
 }
 
-impl <'a> Debug for BtrfsRootRef <'a> {
+impl <'a> Debug for BtrfsRootBackref <'a> {
 
 	fn fmt (
 		& self,
@@ -126,7 +126,7 @@ impl <'a> Debug for BtrfsRootRef <'a> {
 
 		let mut debug_struct =
 			formatter.debug_struct (
-				"BtrfsRootRef");
+				"BtrfsRootBackref");
 
 		debug_struct.field (
 			"key",
