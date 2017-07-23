@@ -8,16 +8,6 @@ pub struct BtrfsExtentItem <'a> {
 	data_bytes: & 'a [u8],
 }
 
-#[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, PartialEq) ]
-pub struct BtrfsExtentItemData {
-	reference_count: u64,
-	generation: u64,
-	flags: u64,
-	first_entry_key: BtrfsKey,
-	level: u8,
-}
-
 impl <'a> BtrfsExtentItem <'a> {
 
 	pub fn from_bytes (
@@ -48,18 +38,6 @@ impl <'a> BtrfsExtentItem <'a> {
 
 		Ok (extent_item)
 
-	}
-
-	pub fn header (& self) -> & BtrfsLeafItemHeader {
-		self.header
-	}
-
-	pub fn object_id (& self) -> u64 {
-		self.header.object_id ()
-	}
-
-	pub fn key (& self) -> BtrfsKey {
-		self.header.key ()
 	}
 
 	pub fn offset (& self) -> u64 {
@@ -95,6 +73,14 @@ impl <'a> BtrfsExtentItem <'a> {
 
 	pub fn level (& self) -> u8 {
 		self.data ().level
+	}
+
+}
+
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsExtentItem <'a> {
+
+	fn header (& self) -> & BtrfsLeafItemHeader {
+		self.header
 	}
 
 }

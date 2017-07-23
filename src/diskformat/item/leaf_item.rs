@@ -1,4 +1,4 @@
-use diskformat::*;
+use super::super::*;
 
 #[ derive (Clone, Debug) ]
 pub enum BtrfsLeafItem <'a> {
@@ -10,6 +10,7 @@ pub enum BtrfsLeafItem <'a> {
 	InodeItem (BtrfsInodeItem <'a>),
 	Invalid (BtrfsInvalidItem <'a>),
 	RootItem (BtrfsRootItem <'a>),
+	RootRef (BtrfsRootRef <'a>),
 	Unknown (BtrfsUnknownItem <'a>),
 }
 
@@ -22,27 +23,15 @@ impl <'a> BtrfsLeafItem <'a> {
 
 		match header.key ().item_type () {
 
-			BTRFS_INODE_ITEM_TYPE =>
-				BtrfsInodeItem::from_bytes (
+			BTRFS_CHUNK_ITEM_TYPE =>
+				BtrfsChunkItem::from_bytes (
 					header,
 					data_bytes,
 				).map (
-					|inode_item|
+					|chunk_item|
 
-					BtrfsLeafItem::InodeItem (
-						inode_item)
-
-				),
-
-			BTRFS_DIR_ITEM_TYPE =>
-				BtrfsDirItem::from_bytes (
-					header,
-					data_bytes,
-				).map (
-					|dir_item|
-
-					BtrfsLeafItem::DirItem (
-						dir_item)
+					BtrfsLeafItem::ChunkItem (
+						chunk_item)
 
 				),
 
@@ -55,6 +44,18 @@ impl <'a> BtrfsLeafItem <'a> {
 
 					BtrfsLeafItem::DirIndex (
 						dir_index)
+
+				),
+
+			BTRFS_DIR_ITEM_TYPE =>
+				BtrfsDirItem::from_bytes (
+					header,
+					data_bytes,
+				).map (
+					|dir_item|
+
+					BtrfsLeafItem::DirItem (
+						dir_item)
 
 				),
 
@@ -82,15 +83,15 @@ impl <'a> BtrfsLeafItem <'a> {
 
 				),
 
-			BTRFS_CHUNK_ITEM_TYPE =>
-				BtrfsChunkItem::from_bytes (
+			BTRFS_INODE_ITEM_TYPE =>
+				BtrfsInodeItem::from_bytes (
 					header,
 					data_bytes,
 				).map (
-					|chunk_item|
+					|inode_item|
 
-					BtrfsLeafItem::ChunkItem (
-						chunk_item)
+					BtrfsLeafItem::InodeItem (
+						inode_item)
 
 				),
 
@@ -103,6 +104,18 @@ impl <'a> BtrfsLeafItem <'a> {
 
 					BtrfsLeafItem::RootItem (
 						root_item)
+
+				),
+
+			BTRFS_ROOT_REF_ITEM_TYPE =>
+				BtrfsRootRef::from_bytes (
+					header,
+					data_bytes,
+				).map (
+					|root_ref|
+
+					BtrfsLeafItem::RootRef (
+						root_ref)
 
 				),
 
@@ -131,45 +144,82 @@ impl <'a> BtrfsLeafItem <'a> {
 
 	}
 
-	pub fn header (& self) -> & BtrfsLeafItemHeader {
+	pub fn contents (
+		& 'a self,
+	) -> Box <& 'a BtrfsLeafItemContents <'a>> {
 
 		match self {
 
 			& BtrfsLeafItem::ChunkItem (ref chunk_item) =>
-				chunk_item.header (),
+				Box::new (chunk_item),
 
 			& BtrfsLeafItem::DirIndex (ref dir_index) =>
-				dir_index.header (),
+				Box::new (dir_index),
 
 			& BtrfsLeafItem::DirItem (ref dir_item) =>
-				dir_item.header (),
+				Box::new (dir_item),
 
 			& BtrfsLeafItem::ExtentData (ref extent_data) =>
-				extent_data.header (),
+				Box::new (extent_data),
 
 			& BtrfsLeafItem::ExtentItem (ref extent_item) =>
-				extent_item.header (),
+				Box::new (extent_item),
 
 			& BtrfsLeafItem::InodeItem (ref inode_item) =>
-				inode_item.header (),
-
-			& BtrfsLeafItem::Unknown (ref unknown_item) =>
-				unknown_item.header (),
+				Box::new (inode_item),
 
 			& BtrfsLeafItem::Invalid (ref invalid_item) =>
-				invalid_item.header (),
+				Box::new (invalid_item),
 
 			& BtrfsLeafItem::RootItem (ref root_item) =>
-				root_item.header (),
+				Box::new (root_item),
+
+			& BtrfsLeafItem::RootRef (ref root_ref) =>
+				Box::new (root_ref),
+
+			& BtrfsLeafItem::Unknown (ref unknown_item) =>
+				Box::new (unknown_item),
 
 		}
 
+	}
+
+	pub fn header (& self) -> & BtrfsLeafItemHeader {
+		self.contents ().header ()
 	}
 
 	pub fn key (& self) -> BtrfsKey {
 		self.header ().key ()
 	}
 
+	pub fn object_id (& self) -> u64 {
+		self.contents ().object_id ()
+	}
+
+	pub fn item_type (& self) -> u8 {
+		self.contents ().item_type ()
+	}
+
+	pub fn offset (& self) -> u64 {
+		self.contents ().offset ()
+	}
+
+	pub fn as_root_item (
+		& 'a self,
+	) -> Option <& 'a BtrfsRootItem <'a>> {
+
+		match self {
+
+			& BtrfsLeafItem::RootItem (ref item) =>
+				Some (item),
+
+			_ =>
+				None,
+
+		}
+
+	}
+
 }
 
-// ex: noet ts=4 filetype=rust
+// ex: noet ts=4 filetype=rust// ex: noet ts=4 filetype=rust

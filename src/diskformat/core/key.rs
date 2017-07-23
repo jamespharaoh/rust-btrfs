@@ -12,6 +12,20 @@ pub struct BtrfsKey {
 
 impl BtrfsKey {
 
+	pub fn new (
+		object_id: u64,
+		item_type: u8,
+		offset: u64,
+	) -> BtrfsKey {
+
+		BtrfsKey {
+			object_id: object_id,
+			item_type: item_type,
+			offset: offset,
+		}
+
+	}
+
 	pub fn object_id (& self) -> u64 {
 		self.object_id
 	}

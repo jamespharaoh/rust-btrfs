@@ -64,14 +64,6 @@ impl <'a> BtrfsDirItem <'a> {
 		self.header
 	}
 
-	pub fn key (& self) -> BtrfsKey {
-		self.header.key ()
-	}
-
-	pub fn object_id (& self) -> u64 {
-		self.header.object_id ()
-	}
-
 	pub fn data (& self) -> & BtrfsDirItemData {
 
 		unsafe {
@@ -127,6 +119,14 @@ impl <'a> BtrfsDirItem <'a> {
 		String::from_utf8_lossy (
 			self.name ())
 
+	}
+
+}
+
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsDirItem <'a> {
+
+	fn header (& self) -> & BtrfsLeafItemHeader {
+		self.header
 	}
 
 }

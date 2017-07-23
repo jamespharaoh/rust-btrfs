@@ -20,8 +20,9 @@ impl <'a> BtrfsNode <'a> {
 		// verify checksum
 
 		let calculated_checksum =
-			BtrfsChecksum::calculate_crc32 (
-				& bytes [0x20 .. bytes.len ()]);
+			BtrfsChecksum::from (
+				btrfs_crc32c (
+					& bytes [0x20 .. bytes.len ()]));
 
 		let header = unsafe {
 			& * (bytes.as_ptr () as * const BtrfsNodeHeader)

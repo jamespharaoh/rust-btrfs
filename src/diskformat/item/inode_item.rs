@@ -1,33 +1,14 @@
+use std::fmt::Debug;
+use std::fmt::Error as FmtError;
+use std::fmt::Formatter;
 use std::mem;
 
-use diskformat::*;
+use super::super::*;
 
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
+#[ derive (Copy, Clone, Eq, Hash, Ord, PartialEq, PartialOrd) ]
 pub struct BtrfsInodeItem <'a> {
 	header: & 'a BtrfsLeafItemHeader,
 	data_bytes: & 'a [u8],
-}
-
-#[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsInodeItemData {
-	generation: u64,
-	transaction_id: u64,
-	st_size: u64,
-	st_blocks: u64,
-	block_group: u64,
-	st_nlink: u32,
-	st_uid: u32,
-	st_gid: u32,
-	st_mode: u32,
-	st_rdev: u64,
-	flags: u64,
-	sequence: u64,
-	reserved: [u8; 0x20],
-	st_atime: [u8; 0xc],
-	st_ctime: [u8; 0xc],
-	st_mtime: [u8; 0xc],
-	otime: [u8; 0xc],
 }
 
 impl <'a> BtrfsInodeItem <'a> {
@@ -59,10 +40,6 @@ impl <'a> BtrfsInodeItem <'a> {
 
 	}
 
-	pub fn header (& self) -> & BtrfsLeafItemHeader {
-		self.header
-	}
-
 	pub fn data (& self) -> & BtrfsInodeItemData {
 
 		unsafe {
@@ -72,14 +49,6 @@ impl <'a> BtrfsInodeItem <'a> {
 			)
 		}
 
-	}
-
-	pub fn object_id (& self) -> u64 {
-		self.header.object_id ()
-	}
-
-	pub fn key (& self) -> BtrfsKey {
-		self.header.key ()
 	}
 
 	pub fn generation (& self) -> u64 {
@@ -130,20 +99,51 @@ impl <'a> BtrfsInodeItem <'a> {
 		self.data ().sequence
 	}
 
-	pub fn st_atime (& self) -> [u8; 0xc] {
+	pub fn st_atime (& self) -> BtrfsTimestamp {
 		self.data ().st_atime
 	}
 
-	pub fn st_ctime (& self) -> [u8; 0xc] {
+	pub fn st_ctime (& self) -> BtrfsTimestamp {
 		self.data ().st_ctime
 	}
 
-	pub fn st_mtime (& self) -> [u8; 0xc] {
+	pub fn st_mtime (& self) -> BtrfsTimestamp {
 		self.data ().st_mtime
 	}
 
-	pub fn otime (& self) -> [u8; 0xc] {
-		self.data ().otime
+	pub fn st_otime (& self) -> BtrfsTimestamp {
+		self.data ().st_otime
+	}
+
+}
+
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsInodeItem <'a> {
+
+	fn header (& self) -> & BtrfsLeafItemHeader {
+		self.header
+	}
+
+}
+
+impl <'a> Debug for BtrfsInodeItem <'a> {
+
+	fn fmt (
+		& self,
+		formatter: & mut Formatter,
+	) -> Result <(), FmtError> {
+
+		let mut debug_struct =
+			formatter.debug_struct (
+				"BtrfsInodeItem");
+
+		self.header ().debug_struct (
+			& mut debug_struct);
+
+		self.data ().debug_struct (
+			& mut debug_struct);
+
+		debug_struct.finish ()
+
 	}
 
 }

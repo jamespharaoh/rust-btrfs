@@ -185,11 +185,13 @@ pub const BTRFS_EXTENT_TREE_OBJECT_ID: u64 = 2;
 pub const BTRFS_CHUNK_TREE_OBJECT_ID: u64 = 3;
 pub const BTRFS_DEV_TREE_OBJECT_ID: u64 = 4;
 pub const BTRFS_FS_TREE_OBJECT_ID: u64 = 5;
+pub const BTRFS_DEFAULT_TREE_OBJECT_ID: u64 = 6;
 
 pub const BTRFS_ROOT_TREE_ID: BtrfsTreeId = BtrfsTreeId (1);
 pub const BTRFS_EXTENT_TREE_ID: BtrfsTreeId = BtrfsTreeId (2);
 pub const BTRFS_CHUNK_TREE_ID: BtrfsTreeId = BtrfsTreeId (3);
 pub const BTRFS_DEV_TREE_ID: BtrfsTreeId = BtrfsTreeId (4);
 pub const BTRFS_FS_TREE_ID: BtrfsTreeId = BtrfsTreeId (5);
+pub const BTRFS_DEFAULT_TREE_ID: BtrfsTreeId = BtrfsTreeId (6);
 
 // ex: noet ts=4 filetype=rust

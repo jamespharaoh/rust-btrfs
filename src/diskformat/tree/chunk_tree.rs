@@ -14,7 +14,6 @@ impl <'a> BtrfsChunkTree <'a> {
 
 	pub fn new (
 		devices: & 'a BtrfsDeviceSet,
-		superblock: BtrfsSuperblock <'a>,
 	) -> Result <BtrfsChunkTree <'a>, String> {
 
 		let extent_tree_items =

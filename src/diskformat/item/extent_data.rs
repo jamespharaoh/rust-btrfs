@@ -13,21 +13,11 @@ pub struct BtrfsExtentData <'a> {
 	data_bytes: & 'a [u8],
 }
 
-#[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsExtentDataData {
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsExtentData <'a> {
 
-	generation: u64,
-	logical_data_size: u64,
-	compression: u8,
-	encryption: u8,
-	other_encoding: u16,
-	extent_type: u8,
-
-	logical_address: u64,
-	extent_size: u64,
-	extent_offset: u64,
-	logical_bytes: u64,
+	fn header (& self) -> & BtrfsLeafItemHeader {
+		self.header
+	}
 
 }
 
@@ -80,18 +70,6 @@ impl <'a> BtrfsExtentData <'a> {
 
 		Ok (extent_data)
 
-	}
-
-	pub fn header (& self) -> & BtrfsLeafItemHeader {
-		self.header
-	}
-
-	pub fn key (& self) -> BtrfsKey {
-		self.header.key ()
-	}
-
-	pub fn object_id (& self) -> u64 {
-		self.header.object_id ()
 	}
 
 	pub fn offset (& self) -> u64 {
@@ -320,13 +298,5 @@ impl <'a> BtrfsExtentData <'a> {
 	}
 
 }
-
-pub const BTRFS_EXTENT_DATA_INLINE_TYPE: u8 = 0;
-pub const BTRFS_EXTENT_DATA_REGULAR_TYPE: u8 = 1;
-pub const BTRFS_EXTENT_DATA_PREALLOC_TYPE: u8 = 2;
-
-pub const BTRFS_EXTENT_DATA_NO_COMPRESSION: u8 = 0;
-pub const BTRFS_EXTENT_DATA_ZLIB_COMPRESSION: u8 = 1;
-pub const BTRFS_EXTENT_DATA_LZO_COMPRESSION: u8 = 2;
 
 // ex: noet ts=4 filetype=rust

@@ -1,36 +1,35 @@
 use std::fmt::Debug;
 use std::fmt::Error as FmtError;
 use std::fmt::Formatter;
-use std::mem;
 
 use super::super::*;
 
 #[ repr (C, packed) ]
 #[ derive (Clone, Copy, Eq, Hash, PartialEq) ]
 pub struct BtrfsRootBackup {
-	tree_root: u64,
-	tree_root_gen: u64,
-	chunk_root: u64,
-	chunk_root_gen: u64,
-	extent_root: u64,
-	extent_root_gen: u64,
-	fs_root: u64,
-	fs_root_gen: u64,
-	dev_root: u64,
-	dev_root_gen: u64,
-	csum_root: u64,
-	csum_root_gen: u64,
-	total_bytes: u64,
-	bytes_used: u64,
-	num_devices: u64,
-	unused_0: [u64; 4],
-	tree_root_level: u8,
-	chunk_root_level: u8,
-	extent_root_level: u8,
-	fs_root_level: u8,
-	dev_root_level: u8,
-	csum_root_level: u8,
-	unused_1: [u8; 10],
+	pub tree_root: u64,
+	pub tree_root_gen: u64,
+	pub chunk_root: u64,
+	pub chunk_root_gen: u64,
+	pub extent_root: u64,
+	pub extent_root_gen: u64,
+	pub fs_root: u64,
+	pub fs_root_gen: u64,
+	pub dev_root: u64,
+	pub dev_root_gen: u64,
+	pub csum_root: u64,
+	pub csum_root_gen: u64,
+	pub total_bytes: u64,
+	pub bytes_used: u64,
+	pub num_devices: u64,
+	pub unused_0: [u64; 4],
+	pub tree_root_level: u8,
+	pub chunk_root_level: u8,
+	pub extent_root_level: u8,
+	pub fs_root_level: u8,
+	pub dev_root_level: u8,
+	pub csum_root_level: u8,
+	pub unused_1: [u8; 10],
 }
 
 impl Debug for BtrfsRootBackup {
@@ -156,9 +155,18 @@ impl Debug for BtrfsRootBackup {
 
 }
 
-#[ test ]
-fn test_size () {
-	assert! (mem::size_of::<BtrfsRootBackup> () == 0xa8);
+#[ cfg (test) ]
+mod tests {
+
+	use std::mem;
+
+	use super::*;
+
+	#[ test ]
+	fn test_size () {
+		assert! (mem::size_of::<BtrfsRootBackup> () == 0xa8);
+	}
+
 }
 
 // ex: noet ts=4 filetype=rust

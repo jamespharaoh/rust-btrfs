@@ -1,0 +1,9 @@
+pub const BTRFS_EXTENT_DATA_INLINE_TYPE: u8 = 0;
+pub const BTRFS_EXTENT_DATA_REGULAR_TYPE: u8 = 1;
+pub const BTRFS_EXTENT_DATA_PREALLOC_TYPE: u8 = 2;
+
+pub const BTRFS_EXTENT_DATA_NO_COMPRESSION: u8 = 0;
+pub const BTRFS_EXTENT_DATA_ZLIB_COMPRESSION: u8 = 1;
+pub const BTRFS_EXTENT_DATA_LZO_COMPRESSION: u8 = 2;
+
+// ex: noet ts=4 filetype=rust

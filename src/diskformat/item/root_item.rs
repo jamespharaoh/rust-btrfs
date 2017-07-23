@@ -1,42 +1,14 @@
-use std::fmt;
+use std::fmt::Debug;
+use std::fmt::Error as FmtError;
+use std::fmt::Formatter;
 use std::mem;
 
-use diskformat::*;
+use super::super::*;
 
 #[ derive (Copy, Clone, Eq, Hash, Ord, PartialEq, PartialOrd) ]
 pub struct BtrfsRootItem <'a> {
 	header: & 'a BtrfsLeafItemHeader,
 	data_bytes: & 'a [u8],
-}
-
-#[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
-pub struct BtrfsRootItemData {
-	inode_item: BtrfsInodeItemData,
-	expected_generation: u64,
-	root_object_id: u64,
-	root_node_block_number: u64,
-	byte_limit: u64,
-	bytes_used: u64,
-	last_snapshot_generation: u64,
-	flags: u64,
-	num_references: u32,
-	drop_progress: BtrfsKey,
-	drop_level: u8,
-	tree_level: u8,
-	generation_v2: u64,
-	subvolume_uuid: BtrfsUuid,
-	parent_uuid: BtrfsUuid,
-	received_uuid: BtrfsUuid,
-	changed_transaction_id: u64,
-	created_transaction_id: u64,
-	sent_transaction_id: u64,
-	received_transaction_id: u64,
-	changed_time: [u8; 0xc],
-	created_time: [u8; 0xc],
-	sent_time: [u8; 0xc],
-	received_time: [u8; 0xc],
-	reserved: [u64; 0x8],
 }
 
 impl <'a> BtrfsRootItem <'a> {
@@ -68,18 +40,6 @@ impl <'a> BtrfsRootItem <'a> {
 
 		Ok (root_item)
 
-	}
-
-	pub fn header (& self) -> & BtrfsLeafItemHeader {
-		self.header
-	}
-
-	pub fn key (& self) -> BtrfsKey {
-		self.header.key ()
-	}
-
-	pub fn object_id (& self) -> u64 {
-		self.header.object_id ()
 	}
 
 	pub fn data (& self) -> & BtrfsRootItemData {
@@ -143,37 +103,32 @@ impl <'a> BtrfsRootItem <'a> {
 
 }
 
-impl <'a> fmt::Debug for BtrfsRootItem <'a> {
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsRootItem <'a> {
+
+	fn header (& self) -> & BtrfsLeafItemHeader {
+		self.header
+	}
+
+}
+
+impl <'a> Debug for BtrfsRootItem <'a> {
 
 	fn fmt (
 		& self,
-		formatter: & mut fmt::Formatter,
-	) -> Result <(), fmt::Error> {
+		formatter: & mut Formatter,
+	) -> Result <(), FmtError> {
 
-		write! (
-			formatter,
-			"BtrfsRootItem: {{ header: ",
-		) ?;
+		let mut debug_struct =
+			formatter.debug_struct (
+				"BtrfsRootItem");
 
-		self.header.fmt (
-			formatter,
-		) ?;
+		self.header.debug_struct (
+			& mut debug_struct);
 
-		write! (
-			formatter,
-			", ",
-		) ?;
+		self.data ().debug_struct (
+			& mut debug_struct);
 
-		self.data ().fmt (
-			formatter,
-		) ?;
-
-		write! (
-			formatter,
-			" }}",
-		) ?;
-
-		Ok (())
+		debug_struct.finish ()
 
 	}
 

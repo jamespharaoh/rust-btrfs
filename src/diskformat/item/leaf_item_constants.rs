@@ -5,5 +5,6 @@ pub const BTRFS_EXTENT_DATA_TYPE: u8 = 0x6c;
 pub const BTRFS_ROOT_ITEM_TYPE: u8 = 0x84;
 pub const BTRFS_EXTENT_ITEM_TYPE: u8 = 0xa8;
 pub const BTRFS_CHUNK_ITEM_TYPE: u8 = 0xe4;
+pub const BTRFS_ROOT_REF_ITEM_TYPE: u8 = 0x9c;
 
 // ex: noet ts=4 filetype=rust

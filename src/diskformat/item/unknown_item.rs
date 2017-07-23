@@ -20,7 +20,11 @@ impl <'a> BtrfsUnknownItem <'a> {
 
 	}
 
-	pub fn header (& self) -> & BtrfsLeafItemHeader {
+}
+
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsUnknownItem <'a> {
+
+	fn header (& self) -> & BtrfsLeafItemHeader {
 		self.header
 	}
 

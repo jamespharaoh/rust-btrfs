@@ -8,16 +8,6 @@ pub struct BtrfsDirIndex <'a> {
 	data_bytes: & 'a [u8],
 }
 
-#[ repr (C, packed) ]
-#[ derive (Copy, Clone, Debug, Eq, Hash, PartialEq) ]
-pub struct BtrfsDirIndexData {
-	child_key: BtrfsKey,
-	transaction_id: u64,
-	data_size: u16,
-	name_size: u16,
-	child_type: u8,
-}
-
 impl <'a> BtrfsDirIndex <'a> {
 
 	pub fn from_bytes (
@@ -66,18 +56,6 @@ impl <'a> BtrfsDirIndex <'a> {
 
 	}
 
-	pub fn header (& self) -> & BtrfsLeafItemHeader {
-		self.header
-	}
-
-	pub fn object_id (& self) -> u64 {
-		self.header.object_id ()
-	}
-
-	pub fn key (& self) -> BtrfsKey {
-		self.header.key ()
-	}
-
 	pub fn data (& self) -> & BtrfsDirIndexData {
 
 		unsafe {
@@ -120,6 +98,14 @@ impl <'a> BtrfsDirIndex <'a> {
 			+ self.name_size () as usize
 		]
 
+	}
+
+}
+
+impl <'a> BtrfsLeafItemContents <'a> for BtrfsDirIndex <'a> {
+
+	fn header (& self) -> & BtrfsLeafItemHeader {
+		self.header
 	}
 
 }
