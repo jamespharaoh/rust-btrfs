@@ -1,11 +1,4 @@
-use std::borrow::Cow;
-use std::mem;
-
-use flate2;
-
-use minilzo;
-
-use diskformat::*;
+use super::super::prelude::*;
 
 #[ derive (Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd) ]
 pub struct BtrfsExtentData <'a> {
@@ -111,13 +104,13 @@ impl <'a> BtrfsExtentData <'a> {
 		self.data ().extent_type
 	}
 
-	pub fn logical_address (& self) -> u64 {
+	pub fn extent_logical_address (& self) -> u64 {
 
 		if self.inline () {
 			panic! ();
 		}
 
-		self.data ().logical_address
+		self.data ().extent_logical_address
 
 	}
 
@@ -131,30 +124,36 @@ impl <'a> BtrfsExtentData <'a> {
 
 	}
 
-	pub fn extent_offset (& self) -> u64 {
+	pub fn extent_data_offset (& self) -> u64 {
 
 		if self.inline () {
 			panic! ();
 		}
 
-		self.data ().extent_offset
+		self.data ().extent_data_offset
 
 	}
 
-	pub fn logical_bytes (& self) -> u64 {
+	pub fn extent_data_size (& self) -> u64 {
 
 		if self.inline () {
 			panic! ();
 		}
 
-		self.data ().logical_bytes
+		self.data ().extent_data_size
 
 	}
 
-	pub fn inline (
-		& self,
-	) -> bool {
+	pub fn inline (& self) -> bool {
 		self.data ().extent_type == BTRFS_EXTENT_DATA_INLINE_TYPE
+	}
+
+	pub fn regular (& self) -> bool {
+		self.data ().extent_type == BTRFS_EXTENT_DATA_REGULAR_TYPE
+	}
+
+	pub fn prealloc (& self) -> bool {
+		self.data ().extent_type == BTRFS_EXTENT_DATA_PREALLOC_TYPE
 	}
 
 	pub fn inline_data (
@@ -193,101 +192,11 @@ impl <'a> BtrfsExtentData <'a> {
 
 			}
 
-			match self.data ().compression {
-
-				BTRFS_EXTENT_DATA_NO_COMPRESSION =>
-					Ok (Some (
-						Cow::Borrowed (
-							raw_data)
-					)),
-
-				BTRFS_EXTENT_DATA_LZO_COMPRESSION => try! (
-					minilzo::decompress (
-						raw_data,
-						self.data ().logical_data_size as usize,
-					).map (
-						|uncompressed_data|
-
-						Ok (Some (
-							Cow::Owned (
-								uncompressed_data)
-						))
-
-					).or_else (
-						|error|
-
-						Err (
-							format! (
-								"LZO decompression failed: {:?}",
-								error)
-						)
-
-					)
-				),
-
-				BTRFS_EXTENT_DATA_ZLIB_COMPRESSION => {
-
-					let mut uncompressed_data =
-						Vec::with_capacity (
-							self.data ().logical_data_size as usize);
-
-					uncompressed_data.resize (
-						self.data ().logical_data_size as usize,
-						0u8);
-
-					let mut decompress =
-						flate2::Decompress::new (
-							false);
-
-					match (
-						decompress.decompress (
-							raw_data,
-							& mut uncompressed_data,
-							flate2::Flush::Finish,
-						).unwrap_or_else (
-							|error|
-
-							panic! (
-								"ZLIB decompression failed: {:?}",
-								error)
-
-						)
-					) {
-
-						flate2::Status::Ok =>
-							(),
-
-						_ =>
-							panic! (
-								"ZLIB decompression failed"),
-
-					}
-
-					if decompress.total_out () as usize
-						!= uncompressed_data.len () {
-
-						panic! (
-							"ZLIB decompressed size {} does not match {}",
-							decompress.total_out (),
-							uncompressed_data.len ());
-
-					}
-
-					Ok (Some (
-						Cow::Owned (
-							uncompressed_data
-						)
-					))
-
-				},
-
-				_ =>
-					panic! (
-						format! (
-							"Unrecognised inline extent data compression {}",
-							self.data ().compression)),
-
-			}
+			btrfs_decompress_pages (
+				self.compression (),
+				raw_data,
+				self.logical_data_size (),
+			).map (Some)
 
 		} else {
 

@@ -1,6 +1,4 @@
-use std::mem;
-
-use diskformat::*;
+use super::super::prelude::*;
 
 #[ derive (Copy, Clone, Debug, Eq, Hash, PartialEq) ]
 pub struct BtrfsExtentItem <'a> {
@@ -67,12 +65,30 @@ impl <'a> BtrfsExtentItem <'a> {
 		self.data ().flags
 	}
 
-	pub fn first_entry_key (& self) -> BtrfsKey {
-		self.data ().first_entry_key
+	pub fn is_data (& self) -> bool {
+		self.data ().flags & BTRFS_EXTENT_FLAG_DATA != 0
 	}
 
-	pub fn level (& self) -> u8 {
-		self.data ().level
+	pub fn is_tree_block (& self) -> bool {
+		self.data ().flags & BTRFS_EXTENT_FLAG_TREE_BLOCK != 0
+	}
+
+	pub fn is_full_backref (& self) -> bool {
+		self.data ().flags & BTRFS_EXTENT_FLAG_FULL_BACKREF != 0
+	}
+
+	pub fn tree_block_info (& self) -> & BtrfsTreeBlockInfoData {
+
+		if ! self.is_tree_block () {
+			panic! ();
+		}
+
+		unsafe {
+			mem::transmute (
+				& self.data_bytes [
+					mem::size_of::<BtrfsExtentItemData> ()])
+		}
+
 	}
 
 }

@@ -8,80 +8,87 @@ pub struct BtrfsRootTree <'a> {
 
 impl <'a> BtrfsRootTree <'a> {
 
-	pub fn root_items (
+	tree_item_accessor! (
+		dir_item,
+		BtrfsDirItem,
+		BTRFS_DIR_ITEM_TYPE,
+		DirItem,
+	);
+
+	pub fn default_root_dir_item_entry (
 		& 'a self,
-	) -> Vec <& 'a BtrfsRootItem <'a>> {
+	) -> Option <BtrfsDirItemEntry <'a>> {
 
-		self.tree_items.values ().filter (
-			|item| item.key ().item_type () == BTRFS_ROOT_ITEM_TYPE,
-		).map (
-			|item|
+		self.dir_item (
+			BTRFS_DEFAULT_TREE_OBJECT_ID,
+			btrfs_crc32_linux (b"default") as u64,
+		).and_then (
+			|dir_item|
 
-			match item {
+			dir_item.entries ().next ()
 
-				& BtrfsLeafItem::RootItem (ref item) =>
-					item,
-
-				_ =>
-					panic! (),
-
-			}
-
-		).collect ()
+		)
 
 	}
 
-	pub fn root_item (
+	pub fn default_root_inode_item (
 		& 'a self,
-		tree_id: u64,
-	) -> Option <& 'a BtrfsRootItem <'a>> {
+	) -> Option <BtrfsInodeItem <'a>> {
 
-		self.tree_items.values ().filter (
-			|item|
+		self.inode_item (
+			BTRFS_DEFAULT_TREE_OBJECT_ID,
+			0,
+		)
 
-			item.item_type () == BTRFS_ROOT_ITEM_TYPE
-			&& item.object_id () == tree_id
+	}
 
-		).map (
+	pub fn default_subvolume_root_item (
+		& 'a self,
+	) -> Option <BtrfsRootItem <'a>> {
+
+		self.default_root_dir_item_entry ().and_then (
+			|default_root_dir_item_entry| {
+
+			self.get_by_key (
+				BtrfsKey::new (
+					default_root_dir_item_entry.child_object_id (),
+					BTRFS_ROOT_ITEM_TYPE,
+					0,
+				),
+			)
+
+		}).map (
 			|root_item|
 
 			leaf_item_destructure! (
 				root_item,
 				RootItem,
-			).unwrap ()
+			).unwrap ().clone ()
 
-		).next ()
+		)
 
 	}
 
 	pub fn fs_tree_root_item (
 		& 'a self,
-	) -> Option <& 'a BtrfsRootItem <'a>> {
+	) -> Option <BtrfsRootItem <'a>> {
 
-		self.get_by_key (
-			BtrfsKey::new (
-				BTRFS_FS_TREE_OBJECT_ID,
-				BTRFS_ROOT_ITEM_TYPE,
-				0,
-			),
-		).map (
-			|item|
-
-			match item  {
-
-			& BtrfsLeafItem::RootItem (ref item) =>
-				item,
-
-			_ =>
-				panic! (),
-
-		})
+		self.root_item (
+			BTRFS_FS_TREE_OBJECT_ID,
+		)
 
 	}
 
+	tree_item_accessor! (
+		inode_item,
+		BtrfsInodeItem,
+		BTRFS_INODE_ITEM_TYPE,
+		InodeItem,
+	);
+
 	pub fn subvolume_root_items (
 		& 'a self,
-	) -> Vec <& 'a BtrfsRootItem <'a>> {
+	) -> Vec <BtrfsRootItem <'a>> {
 
 		self.tree_items.values ().filter (
 			|item|
@@ -99,7 +106,7 @@ impl <'a> BtrfsRootTree <'a> {
 			leaf_item_destructure! (
 				root_item,
 				RootItem,
-			).unwrap ()
+			).unwrap ().clone ()
 
 		).collect ()
 
@@ -107,7 +114,7 @@ impl <'a> BtrfsRootTree <'a> {
 
 	pub fn subvolume_root_refs (
 		& 'a self,
-	) -> Vec <& 'a BtrfsRootRef <'a>> {
+	) -> Vec <BtrfsRootRef <'a>> {
 
 		self.tree_items.values ().filter (
 			|item|
@@ -120,15 +127,30 @@ impl <'a> BtrfsRootTree <'a> {
 			leaf_item_destructure! (
 				root_ref,
 				RootRef,
-			).unwrap ()
+			).unwrap ().clone ()
 
 		).collect ()
 
 	}
 
+	tree_item_accessor! (
+		root_item,
+		BtrfsRootItem,
+		BTRFS_ROOT_ITEM_TYPE,
+		RootItem,
+		0,
+	);
+
+	tree_item_range_accessor! (
+		root_items,
+		BtrfsRootItem,
+		BTRFS_ROOT_ITEM_TYPE,
+		RootItem,
+	);
+
 	pub fn subvolume_root_backrefs (
 		& 'a self,
-	) -> Vec <& 'a BtrfsRootBackref <'a>> {
+	) -> Vec <BtrfsRootBackref <'a>> {
 
 		self.tree_items.values ().filter (
 			|item|
@@ -141,91 +163,9 @@ impl <'a> BtrfsRootTree <'a> {
 			leaf_item_destructure! (
 				root_backref,
 				RootBackref,
-			).unwrap ()
+			).unwrap ().clone ()
 
 		).collect ()
-
-	}
-
-	pub fn default_root_inode_item (
-		& 'a self,
-	) -> Option <& 'a BtrfsInodeItem <'a>> {
-
-		self.get_by_key (
-			BtrfsKey::new (
-				BTRFS_DEFAULT_TREE_OBJECT_ID,
-				BTRFS_INODE_ITEM_TYPE,
-				0,
-			),
-		).map (
-			|item|
-
-			match item  {
-
-			& BtrfsLeafItem::InodeItem (ref item) =>
-				item,
-
-			_ =>
-				panic! (),
-
-		})
-
-	}
-
-	pub fn default_root_dir_item (
-		& 'a self,
-	) -> Option <& 'a BtrfsDirItem <'a>> {
-
-		self.get_by_key (
-			BtrfsKey::new (
-				BTRFS_DEFAULT_TREE_OBJECT_ID,
-				BTRFS_DIR_ITEM_TYPE,
-				btrfs_crc32_linux (
-					b"default",
-				) as u64,
-			),
-		).map (
-			|item|
-
-			match item  {
-
-			& BtrfsLeafItem::DirItem (ref item) =>
-				item,
-
-			_ =>
-				panic! (),
-
-		})
-
-	}
-
-	pub fn default_subvolume_root_item (
-		& 'a self,
-	) -> Option <& 'a BtrfsRootItem <'a>> {
-
-		self.default_root_dir_item ().and_then (
-			|default_root_dir_item| {
-
-			let default_root_dir_item_entry =
-				default_root_dir_item.entries ().next ().unwrap ();
-
-			self.get_by_key (
-				BtrfsKey::new (
-					default_root_dir_item_entry.child_object_id (),
-					BTRFS_ROOT_ITEM_TYPE,
-					0,
-				),
-			)
-
-		}).map (
-			|root_item|
-
-			leaf_item_destructure! (
-				root_item,
-				RootItem,
-			).unwrap ()
-
-		)
 
 	}
 

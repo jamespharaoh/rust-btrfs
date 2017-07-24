@@ -75,6 +75,10 @@ impl <'a> BtrfsDirIndex <'a> {
 		self.data ().child_key
 	}
 
+	pub fn child_object_id (& self) -> u64 {
+		self.child_key ().object_id ()
+	}
+
 	pub fn transaction_id (& self) -> u64 {
 		self.data ().transaction_id
 	}

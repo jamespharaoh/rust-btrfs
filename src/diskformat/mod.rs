@@ -1,6 +1,7 @@
 #[ macro_use]
 mod macros;
 
+mod compression;
 mod core;
 mod filesystem;
 mod item;
@@ -9,6 +10,7 @@ mod prelude;
 mod tree;
 mod naked_string;
 
+pub use self::compression::*;
 pub use self::core::*;
 pub use self::filesystem::*;
 pub use self::item::*;

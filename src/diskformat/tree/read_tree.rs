@@ -13,7 +13,7 @@ pub fn btrfs_read_tree_recurse_physical_address <'a> (
 	errors: & mut Vec <String>,
 ) {
 
-	output_debug! (
+	output_message! (
 		output,
 		"Read tree node at {}",
 		physical_address);
@@ -31,14 +31,22 @@ pub fn btrfs_read_tree_recurse_physical_address <'a> (
 
 	if node_bytes_result.is_none () {
 
-		errors.push (
+		let error =
 			format! (
 				"Physical address range invalid on device {}: 0x{:x} to \
 				0x{:x}",
 				physical_address.device_id (),
 				physical_address.offset (),
 				physical_address.offset ()
-					+ devices.superblock ().node_size () as u64));
+					+ devices.superblock ().node_size () as u64);
+
+		output_message! (
+			output,
+			"{}",
+			error);
+
+		errors.push (
+			error);
 
 		return;
 
@@ -55,11 +63,19 @@ pub fn btrfs_read_tree_recurse_physical_address <'a> (
 
 	if let Err (error) = node_result {
 
-		errors.push (
+		let error =
 			format! (
 				"Error reading node at {}: {}",
 				physical_address,
-				error));
+				error);
+
+		output_message! (
+			output,
+			"{}",
+			error);
+
+		errors.push (
+			error);
 
 		return;
 
@@ -120,10 +136,18 @@ pub fn btrfs_read_tree_recurse_logical_address <'a> (
 
 	if logical_to_physical_result.is_none () {
 
-		errors.push (
+		let error =
 			format! (
 				"Logical address lookup failed: 0x{:x}",
-				logical_address));
+				logical_address);
+
+		output_message! (
+			output,
+			"{}",
+			error);
+
+		errors.push (
+			error);
 
 		return;
 

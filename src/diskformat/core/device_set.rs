@@ -113,14 +113,14 @@ impl <'a> BtrfsDeviceSet <'a> {
 
 			) ?;
 
-		self.system_slice_at_physical_address (
+		self.slice_at_physical_address (
 			physical_address,
 			size,
 		)
 
 	}
 
-	pub fn system_slice_at_physical_address (
+	pub fn slice_at_physical_address (
 		& self,
 		physical_address: BtrfsPhysicalAddress,
 		size: usize,

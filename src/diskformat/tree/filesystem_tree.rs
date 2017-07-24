@@ -1,6 +1,4 @@
-use std::collections::BTreeMap;
-
-use super::super::*;
+use super::super::prelude::*;
 
 pub struct BtrfsFilesystemTree <'a> {
 	tree_items: BTreeMap <BtrfsKey, BtrfsLeafItem <'a>>,
@@ -8,101 +6,78 @@ pub struct BtrfsFilesystemTree <'a> {
 
 impl <'a> BtrfsFilesystemTree <'a> {
 
-	pub fn dir_items (
+	tree_item_accessor! (
+		dir_index,
+		BtrfsDirIndex,
+		BTRFS_DIR_INDEX_TYPE,
+		DirIndex,
+	);
+
+	tree_item_range_accessor! (
+		dir_indexes,
+		BtrfsDirIndex,
+		BTRFS_DIR_INDEX_TYPE,
+		DirIndex,
+	);
+
+	tree_item_accessor! (
+		dir_item,
+		BtrfsDirItem,
+		BTRFS_DIR_ITEM_TYPE,
+		DirItem,
+	);
+
+	pub fn dir_item_entry (
 		& 'a self,
-		directory_id: u64,
-	) -> Vec <BtrfsDirItem <'a>> {
+		object_id: u64,
+		name: & [u8],
+	) -> Option <BtrfsDirItemEntry <'a>> {
 
-		self.tree_items.values ().filter (
-			|item|
-
-			item.item_type () == BTRFS_DIR_ITEM_TYPE
-			&& item.object_id () == directory_id
-
-		).map (
+		self.dir_item (
+			object_id,
+			btrfs_crc32_linux (name) as u64,
+		).and_then (
 			|dir_item|
 
-			leaf_item_destructure! (
-				dir_item,
-				DirItem,
-			).unwrap ().clone ()
+			dir_item.entries ().find (
+				|dir_item_entry|
 
-		).collect ()
+				dir_item_entry.name () == name
 
-	}
-
-	pub fn dir_index (
-		& 'a self,
-		directory_id: u64,
-		sequence: u64,
-	) -> Option <BtrfsDirIndex <'a>> {
-
-		self.tree_items.get (
-			& BtrfsKey::new (
-				directory_id,
-				BTRFS_DIR_INDEX_TYPE,
-				sequence),
-		).map (
-			|dir_index|
-
-			leaf_item_destructure! (
-				dir_index,
-				DirIndex,
-			).unwrap ().clone ()
+			)
 
 		)
 
 	}
 
-	pub fn dir_indexes (
-		& 'a self,
-		directory_id: u64,
-	) -> Vec <BtrfsDirIndex <'a>> {
+	tree_item_range_accessor! (
+		dir_items,
+		BtrfsDirItem,
+		BTRFS_DIR_ITEM_TYPE,
+		DirItem,
+	);
 
-		self.tree_items.values ().filter (
-			|item|
+	tree_item_range_accessor! (
+		extent_datas,
+		BtrfsExtentData,
+		BTRFS_EXTENT_DATA_TYPE,
+		ExtentData,
+	);
 
-			item.item_type () == BTRFS_DIR_INDEX_TYPE
-			&& item.object_id () == directory_id
+	tree_item_accessor! (
+		inode_item,
+		BtrfsInodeItem,
+		BTRFS_INODE_ITEM_TYPE,
+		InodeItem,
+		0,
+	);
 
-		).map (
-			|dir_index|
-
-			leaf_item_destructure! (
-				dir_index,
-				DirIndex,
-			).unwrap ().clone ()
-
-		).collect ()
-
-	}
-
-	pub fn inode_refs (
-		& 'a self,
-		inode_id: u64,
-	) -> Vec <BtrfsInodeRef <'a>> {
-
-		self.tree_items ().range (
-			BtrfsKey::new (
-				inode_id,
-				BTRFS_INODE_REF_TYPE,
-				0)
-		..
-			BtrfsKey::new (
-				inode_id,
-				BTRFS_INODE_REF_TYPE + 1,
-				0)
-		).map (
-			|(_key, inode_ref)|
-
-			leaf_item_destructure! (
-				inode_ref,
-				InodeRef,
-			).unwrap ().clone ()
-
-		).collect ()
-
-	}
+	tree_item_range_accessor! (
+		inode_refs,
+		BtrfsInodeRef,
+		BTRFS_INODE_REF_TYPE,
+		InodeRef,
+	);
 
 }
 

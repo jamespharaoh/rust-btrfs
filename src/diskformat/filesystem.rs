@@ -3,8 +3,8 @@ use super::prelude::*;
 pub struct BtrfsFilesystem <'a> {
 	devices: & 'a BtrfsDeviceSet <'a>,
 	chunk_tree: BtrfsChunkTree <'a>,
-	root_tree: BtrfsRootTree <'a>,
 	filesystem_trees: HashMap <u64, BtrfsFilesystemTree <'a>>,
+	root_tree: BtrfsRootTree <'a>,
 }
 
 impl <'a> BtrfsFilesystem <'a> {
@@ -146,8 +146,8 @@ impl <'a> BtrfsFilesystem <'a> {
 		Ok (BtrfsFilesystem {
 			devices: devices,
 			chunk_tree: chunk_tree,
-			root_tree: root_tree,
 			filesystem_trees: filesystem_trees,
+			root_tree: root_tree,
 		})
 
 	}
@@ -239,8 +239,8 @@ impl <'a> BtrfsFilesystem <'a> {
 		Ok (BtrfsFilesystem {
 			devices: devices,
 			chunk_tree: chunk_tree,
-			root_tree: root_tree,
 			filesystem_trees: filesystem_trees,
+			root_tree: root_tree,
 		})
 
 	}
@@ -263,7 +263,7 @@ impl <'a> BtrfsFilesystem <'a> {
 					output,
 					devices,
 					chunk_tree,
-					root_item,
+					& root_item,
 				) ?,
 			);
 
@@ -327,43 +327,109 @@ impl <'a> BtrfsFilesystem <'a> {
 
 	}
 
-	pub fn default_root_dir_item (
+	pub fn default_root_dir_item_entry (
 		& 'a self,
-	) -> Option <& 'a BtrfsDirItem <'a>> {
-		self.root_tree.default_root_dir_item ()
+	) -> Option <BtrfsDirItemEntry <'a>> {
+		self.root_tree.default_root_dir_item_entry ()
 	}
 
 	pub fn default_root_inode_item (
 		& 'a self,
-	) -> Option <& 'a BtrfsInodeItem <'a>> {
+	) -> Option <BtrfsInodeItem <'a>> {
 		self.root_tree.default_root_inode_item ()
 	}
 
 	pub fn default_subvolume_root_item (
 		& 'a self,
-	) -> Option <& 'a BtrfsRootItem <'a>> {
+	) -> Option <BtrfsRootItem <'a>> {
 		self.root_tree.default_subvolume_root_item ()
 	}
 
 	pub fn subvolume_root_refs (
 		& 'a self,
-	) -> Vec <& 'a BtrfsRootRef <'a>> {
+	) -> Vec <BtrfsRootRef <'a>> {
 		self.root_tree.subvolume_root_refs ()
 	}
 
 	pub fn subvolume_root_backrefs (
 		& 'a self,
-	) -> Vec <& 'a BtrfsRootBackref <'a>> {
+	) -> Vec <BtrfsRootBackref <'a>> {
 		self.root_tree.subvolume_root_backrefs ()
 	}
 
 	pub fn root_item (
 		& 'a self,
 		tree_id: u64,
-	) -> Option <& 'a BtrfsRootItem <'a>> {
+	) -> Option <BtrfsRootItem <'a>> {
 
 		self.root_tree.root_item (
 			tree_id,
+		)
+
+	}
+
+	pub fn logical_to_physical_address (
+		& self,
+		logical_address: u64,
+	) -> Option <BtrfsPhysicalAddress> {
+
+		self.chunk_tree.logical_to_physical_address (
+			logical_address,
+		)
+
+	}
+
+	pub fn slice_at_physical_address (
+		& self,
+		physical_address: BtrfsPhysicalAddress,
+		size: usize,
+	) -> Result <& [u8], String> {
+
+		let device =
+			self.devices.device (
+				physical_address.device_id (),
+			).ok_or (
+
+				format! (
+					"Device not found: {}",
+					physical_address.device_id ())
+
+			) ?;
+
+		device.slice_at (
+			physical_address.offset () as usize,
+			size,
+		).ok_or (
+
+			format! (
+				"Physical address invalid for device {}: 0x{:x}",
+				physical_address.device_id (),
+				physical_address.offset ())
+
+		)
+
+	}
+
+	pub fn slice_at_logical_address (
+		& self,
+		logical_address: u64,
+		size: usize,
+	) -> Result <& [u8], String> {
+
+		let physical_address =
+			self.logical_to_physical_address (
+				logical_address,
+			).ok_or (
+
+				format! (
+					"Logical address not valid: 0x{:x}",
+					logical_address)
+
+			) ?;
+
+		self.slice_at_physical_address (
+			physical_address,
+			size,
 		)
 
 	}
